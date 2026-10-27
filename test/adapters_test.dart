@@ -1,0 +1,152 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sports_esports_briefing/features/scores/data/kbo_scraper_service.dart';
+import 'package:sports_esports_briefing/features/scores/data/match_adapters.dart';
+import 'package:sports_esports_briefing/models/unified_match_model.dart';
+
+void main() {
+  test(
+    'ESPN preserves final score, winner, linescores and league-scoped id',
+    () {
+      final result = EspnAdapter.parse({
+        'events': [
+          {
+            'id': '123',
+            'date': '2026-10-27T00:00:00Z',
+            'name': 'A vs B',
+            'status': {
+              'type': {'completed': true, 'state': 'post', 'detail': 'Final'},
+            },
+            'competitions': [
+              {
+                'competitors': [
+                  {
+                    'team': {'displayName': 'A'},
+                    'score': '100',
+                    'winner': true,
+                    'linescores': [
+                      {'value': 25},
+                    ],
+                  },
+                  {
+                    'team': {'displayName': 'B'},
+                    'score': '95',
+                    'winner': false,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }, League.nba).single;
+      expect(result.id, 'espn:nba:123');
+      expect(result.state, MatchState.finalScore);
+      expect(result.participants.first.winner, isTrue);
+      expect(result.participants.last.score, '95');
+      expect(result.lines.single, 'A: 25');
+    },
+  );
+
+  test('scheduled ESPN events never imply a zero score', () {
+    final match = EspnAdapter.parse({
+      'events': [
+        {
+          'id': '2',
+          'date': '2026-10-27T12:00:00Z',
+          'name': 'A vs B',
+          'status': {
+            'type': {'state': 'pre', 'completed': false},
+          },
+          'competitions': [
+            {
+              'competitors': [
+                {
+                  'team': {'name': 'A'},
+                  'score': '0',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }, League.nfl).single;
+    expect(match.state, MatchState.scheduled);
+    expect(match.participants.single.score, isNull);
+  });
+
+  test('Jolpica retains all classified drivers and retirement status', () {
+    final match = JolpicaAdapter.parse({
+      'MRData': {
+        'RaceTable': {
+          'Races': [
+            {
+              'season': '2026',
+              'round': '1',
+              'date': '2026-03-08',
+              'time': '04:00:00Z',
+              'raceName': 'Grand Prix',
+              'Results': [
+                {
+                  'position': '1',
+                  'Driver': {'givenName': 'A', 'familyName': 'Driver'},
+                  'Constructor': {'name': 'Team'},
+                  'Time': {'time': '1:30:00'},
+                  'points': '25',
+                },
+                {
+                  'position': '2',
+                  'Driver': {'givenName': 'B', 'familyName': 'Driver'},
+                  'Constructor': {'name': 'Other'},
+                  'status': 'Retired',
+                  'points': '0',
+                },
+              ],
+            },
+          ],
+        },
+      },
+    }).single;
+    expect(match.standings, hasLength(2));
+    expect(match.standings.last.time, 'Retired');
+    expect(match.id, 'f1:2026:1');
+  });
+
+  test('Cargo parses UTC alias, entities and series winner', () {
+    final match = LeaguepediaAdapter.parse({
+      'cargoquery': [
+        {
+          'title': {
+            'Team1': 'A &amp; B',
+            'Team2': 'C',
+            'Team1Score': '3',
+            'Team2Score': '1',
+            'Winner': '1',
+            'DateTime UTC': '2026-10-27 12:00:00',
+            'ShownName': 'Worlds',
+            'MatchId': 'worlds-1',
+            'Tab': 'Final',
+          },
+        },
+      ],
+    }).single;
+    expect(match.startsAt.isUtc, isTrue);
+    expect(match.participants.first.name, 'A & B');
+    expect(match.participants.first.winner, isTrue);
+  });
+
+  test('KBO refuses DOM changes and dates not matching the requested day', () {
+    const page =
+        '<div gameid="20261027AB"><span class="team">A</span><span class="team">B</span><b class="score">4</b><b class="score">2</b><span class="status">종료</span></div>';
+    final match = KboScraperService.parse(page, DateTime(2026, 10, 27)).single;
+    expect(match.participants.first.winner, isTrue);
+    expect(
+      () => KboScraperService.parse(page, DateTime(2026, 10, 28)),
+      throwsFormatException,
+    );
+    expect(
+      () =>
+          KboScraperService.parse('<div>new DOM</div>', DateTime(2026, 10, 27)),
+      throwsFormatException,
+    );
+    expect(KboScraperService.example(DateTime(2026)).isExample, isTrue);
+  });
+}
