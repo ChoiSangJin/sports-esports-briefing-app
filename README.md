@@ -1,0 +1,69 @@
+# Tactical Sports
+
+Android ARM64용 Flutter 스포츠·e스포츠 스코어보드. 백엔드와 로그인 없이 기기에서 데이터를 조회하고, 사용자가 등록한 Gemini 키로 한국어 브리핑을 생성합니다.
+
+## 실행 및 검증
+
+Flutter **3.35.7** / Dart 3.9.2, JDK 21, Android SDK 36, NDK 27.0.12077973을 사용합니다. 최소 Android 7.0(API 24), ARM64 기기가 필요합니다.
+
+```sh
+flutter pub get --enforce-lockfile
+flutter analyze
+flutter test --reporter expanded
+flutter run -d <android-device-id>
+```
+
+이 클라우드 작업은 이미 격리돼 있습니다. 기존 `/workspace/sports-esports-briefing-app` 체크아웃을 사용하며 추가 worktree를 만들 필요가 없습니다. 실기기 없이도 어댑터·저장소·캐시·화면 테스트와 APK 빌드가 가능합니다. API 조회 진단은 `dart run scripts/api_smoke.dart`로 실행합니다. 이 명령은 제공처별 가용성을 출력하며 전체 통과를 뜻하는 테스트가 아닙니다.
+
+## 기능
+
+- 리그 필터, 기기 날짜 기준 이전/오늘/다음/달력 탐색, 새로고침, 리그 즐겨찾기 저장
+- ESPN NFL/NBA/MLB 스코어와 이닝·쿼터 기록, 상세 리포트·팀 통계
+- Jolpica F1 포디움과 전체 드라이버 결과·포인트
+- Leaguepedia Cargo의 LCK/MSI/Worlds 대진·세트 스코어
+- KBO HTML 어댑터: 날짜와 구조를 검증하며 실패하면 경고와 **별도 예시 보기** 제공
+- Tactical Dark 색상, 리그 네온 액센트, 고정폭 숫자, 승리 팀 강조
+- Gemini 키 연결 테스트·암호화 저장·삭제, Flash/Pro 선택, AI Studio 링크
+- 모델별 로컬 요약 캐시, 명시적 재요약, 중복 동시 호출 억제. 종료 경기는 영구 보관하며 진행 중 경기는 5분 후 만료
+
+## 데이터와 개인정보
+
+API 키는 코드나 SharedPreferences에 저장하지 않습니다. Android Keystore 기반 `flutter_secure_storage`를 사용하며 Android 백업을 비활성화했습니다. 키는 검증 요청 성공 후 저장됩니다. 오류 원문은 키나 요청 내용을 노출할 수 있어 사용자 화면·로그에 출력하지 않습니다.
+
+요약 버튼을 누르면 경기 자료와 API 키를 Google Gemini로 전송합니다. 연결 테스트도 Google 요청을 수행합니다. 사용자 Google 계정의 요금·할당량·지역·모델 접근 제한이 적용됩니다. 무료 또는 무제한 사용은 보장하지 않습니다. 요약은 일반 로컬 저장소에 보관됩니다. 앱 삭제 시 설정과 키·캐시가 삭제됩니다.
+
+외부 데이터는 비공식 API와 변경 가능한 DOM에 의존합니다. 제공처 오류는 빈 일정과 구분해 표시합니다. KBO 예시는 실제 경기로 표시하거나 AI에 전송하지 않습니다. F1은 **확정 결과**를 제공하며 미래 일정·랩별 텔레메트리는 포함하지 않습니다. LoL은 제공처의 대회 표기 및 접근 정책에 따라 누락될 수 있습니다. 키 없이 스코어 조회가 가능하며 AI는 제공된 기록에 한해서 요약하도록 지시합니다.
+
+현 버전은 핵심 스코어보드/요약 앱입니다. 독립 RSS 뉴스 피드, 팀별 즐겨찾기, ML Kit 번역 모델 다운로드는 아직 구현하지 않았습니다. 실제 Android 기기에서의 Keystore·외부 브라우저·네트워크와 실제 사용자 키의 Gemini 호출은 별도 확인이 필요합니다.
+
+## 폴더 구조
+
+```text
+lib/
+  main.dart
+  models/unified_match_model.dart
+  theme/tactical_dark_theme.dart
+  features/
+    scores/data/                 # ESPN, Jolpica, Cargo, KBO adapters/repository
+    scores/presentation/         # dashboard, cards, match detail + AI
+    settings/api_key_sheet.dart
+  services/                     # encrypted keys, Gemini, cache, Riverpod state
+test/                           # parsing, failure isolation, cache, widget flow
+android/                        # ARM64 Android host, production signing
+.github/workflows/              # CI and signed release workflow
+```
+
+## 서명 APK 배포
+
+개발·CI는 debug APK를 빌드합니다. 배포용 release 빌드는 디버그 키로 대체하지 않습니다. 아래 환경 변수로 **동일한 배포 키**를 계속 사용해야 기존 앱을 업데이트할 수 있습니다.
+
+```sh
+export ANDROID_KEYSTORE_PATH=/secure/path/release.jks
+export ANDROID_KEY_ALIAS=sportsbriefing
+# ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD는 안전한 실행 환경에서 설정
+flutter build apk --release --target-platform android-arm64 --split-per-abi
+```
+
+출력: `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`. `apksigner verify --verbose`로 서명 확인 후 GitHub Release에 APK와 SHA256SUMS를 게시합니다. Android에서 다운로드한 APK의 설치를 허용해야 합니다. Play Store 게시는 별도 작업입니다.
+
+반복 배포는 `Android Release` Actions workflow를 main에서 실행합니다. 저장소 Actions secrets에 `ANDROID_KEYSTORE_BASE64`(keystore의 base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`가 필요합니다. 비밀값은 코드·이슈·PR·공개 Release에 올리지 마세요. 키와 비밀번호는 안전하게 별도 백업해야 합니다. 릴리스 전에 pubspec 버전과 Android versionCode를 증가시켜 주세요.
