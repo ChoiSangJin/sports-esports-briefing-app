@@ -43,6 +43,20 @@ class EspnAdapter {
 }
 
 class JolpicaAdapter {
+  static List<UnifiedMatchModel> schedule(Json json) => [
+    for (final race in json['MRData']['RaceTable']['Races'] as List)
+      UnifiedMatchModel(
+        id: 'f1:${race['season']}:${race['round']}',
+        league: League.f1,
+        startsAt: DateTime.parse(
+          '${race['date']}T${race['time'] ?? '00:00:00Z'}',
+        ),
+        title: race['raceName'].toString(),
+        state: MatchState.scheduled,
+        status: '${race['raceName']} · 예정 · Round ${race['round']}',
+        source: 'Jolpica F1 일정',
+      ),
+  ];
   static List<UnifiedMatchModel> parse(Json json) => [
     for (final race in (json['MRData']['RaceTable']['Races'] as List))
       UnifiedMatchModel(
