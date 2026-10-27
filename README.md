@@ -1,4 +1,4 @@
-# Tactical Sports
+# 스포츠 한눈에
 
 Android ARM64용 Flutter 스포츠·e스포츠 스코어보드. 백엔드와 로그인 없이 기기에서 데이터를 조회하고, 사용자가 등록한 Gemini 키로 한국어 브리핑을 생성합니다.
 
@@ -20,10 +20,11 @@ flutter run -d <android-device-id>
 - 리그 필터, 기기 날짜 기준 이전/오늘/다음/달력 탐색, 새로고침, 리그 즐겨찾기 저장
 - ESPN NFL/NBA/MLB 스코어와 이닝·쿼터 기록, 상세 리포트·팀 통계
 - Jolpica F1 포디움과 전체 드라이버 결과·포인트
-- Leaguepedia Cargo의 LCK/MSI/Worlds 대진·세트 스코어
-- KBO HTML 어댑터: 날짜와 구조를 검증하며 실패하면 경고와 **별도 예시 보기** 제공
+- LoL e스포츠 **공식 일정 페이지**의 여러 지역 리그·국제대회 대진과 세트 스코어, 공개 범위 밖 날짜 안내
+- **KBO 공식 게임센터 JSON**으로 일정·스코어 조회, 한국 시간 변환, 예정/진행/종료/취소 구분
 - Tactical Dark 색상, 리그 네온 액센트, 고정폭 숫자, 승리 팀 강조
-- Gemini 키 연결 테스트·암호화 저장·삭제, Flash/Pro 선택, AI Studio 링크
+- Gemini 키 연결 테스트·암호화 저장·삭제, Google 모델 목록 조회·페이지네이션·모델 ID 직접 입력, AI Studio 링크
+- 새 한글 이름, 스코어보드·공 아이콘, Android 적응형 아이콘. 기존 앱 ID·서명·사용자 설정 유지
 - 모델별 로컬 요약 캐시, 명시적 재요약, 중복 동시 호출 억제. 종료 경기는 영구 보관하며 진행 중 경기는 5분 후 만료
 
 ## 데이터와 개인정보
@@ -32,7 +33,9 @@ API 키는 코드나 SharedPreferences에 저장하지 않습니다. Android Key
 
 요약 버튼을 누르면 경기 자료와 API 키를 Google Gemini로 전송합니다. 연결 테스트도 Google 요청을 수행합니다. 사용자 Google 계정의 요금·할당량·지역·모델 접근 제한이 적용됩니다. 무료 또는 무제한 사용은 보장하지 않습니다. 요약은 일반 로컬 저장소에 보관됩니다. 앱 삭제 시 설정과 키·캐시가 삭제됩니다.
 
-외부 데이터는 비공식 API와 변경 가능한 DOM에 의존합니다. 제공처 오류는 빈 일정과 구분해 표시합니다. KBO 예시는 실제 경기로 표시하거나 AI에 전송하지 않습니다. F1은 **확정 결과**를 제공하며 미래 일정·랩별 텔레메트리는 포함하지 않습니다. LoL은 제공처의 대회 표기 및 접근 정책에 따라 누락될 수 있습니다. 키 없이 스코어 조회가 가능하며 AI는 제공된 기록에 한해서 요약하도록 지시합니다.
+외부 데이터는 공개 웹사이트와 비공식 API에 의존합니다. LoL과 KBO는 공식 사이트 데이터를 사용하지만, 외부 개발자용으로 안정성을 보장하는 계약형 API는 아닙니다. 제공처 오류는 빈 일정과 구분해 표시하고, 원문 공식 페이지 링크를 제공합니다. LoL은 공식 페이지에 포함된 최근·예정 경기 범위를 표시하며 범위 밖 날짜를 전체 역사 데이터로 간주하지 않습니다. F1은 **확정 결과**를 제공하며 미래 일정·랩별 텔레메트리는 포함하지 않습니다. 키 없이 스코어 조회가 가능합니다. [제공처 조사와 구현 근거](docs/data-sources.md)를 참고하세요.
+
+Gemini 모델은 2.5에 고정하지 않습니다. 설정에서 키 입력 → **사용 가능 모델 불러오기** → 모델 선택(또는 ID 직접 입력) → **연결 테스트 및 암호화 저장**을 진행하세요. 목록은 `generateContent` 지원 모델을 대상으로 하며 명시적인 이미지·음성·임베딩 모델을 제외합니다. 목록에 보여도 실제 접근 권한·할당량은 연결 테스트로 확인해야 합니다. 기존 사용자의 선택 모델은 자동 변경하지 않습니다. 모델별 요금·할당량이 다르며, 새 모델이 나와도 앱 코드를 바꿀 필요 없이 다시 조회할 수 있습니다.
 
 현 버전은 핵심 스코어보드/요약 앱입니다. 독립 RSS 뉴스 피드, 팀별 즐겨찾기, ML Kit 번역 모델 다운로드는 아직 구현하지 않았습니다. 실제 Android 기기에서의 Keystore·외부 브라우저·네트워크와 실제 사용자 키의 Gemini 호출은 별도 확인이 필요합니다.
 
@@ -44,10 +47,10 @@ lib/
   models/unified_match_model.dart
   theme/tactical_dark_theme.dart
   features/
-    scores/data/                 # ESPN, Jolpica, Cargo, KBO adapters/repository
+    scores/data/                 # ESPN, Jolpica, official LoL/KBO data
     scores/presentation/         # dashboard, cards, match detail + AI
     settings/api_key_sheet.dart
-  services/                     # encrypted keys, Gemini, cache, Riverpod state
+  services/                     # encrypted keys, Gemini REST/catalog, cache, Riverpod state
 test/                           # parsing, failure isolation, cache, widget flow
 android/                        # ARM64 Android host, production signing
 .github/workflows/              # CI and signed release workflow

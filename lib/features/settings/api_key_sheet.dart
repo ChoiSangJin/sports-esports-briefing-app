@@ -21,18 +21,21 @@ class ApiKeySheet extends ConsumerStatefulWidget {
 
 class _ApiKeySheetState extends ConsumerState<ApiKeySheet> {
   final _controller = TextEditingController();
+  final _modelController = TextEditingController();
   bool _obscure = true, _busy = false;
   String? _message;
-  late String _model;
+  late List<AiModel> _models;
   @override
   void initState() {
     super.initState();
-    _model = ref.read(aiProvider).model;
+    _modelController.text = ref.read(aiProvider).model;
+    _models = ref.read(aiProvider).availableModels;
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _modelController.dispose();
     super.dispose();
   }
 
@@ -47,7 +50,10 @@ class _ApiKeySheetState extends ConsumerState<ApiKeySheet> {
           : null;
       await ref
           .read(aiProvider)
-          .validateAndSave(stored ?? _controller.text, _model);
+          .validateAndSave(
+            stored ?? _controller.text,
+            _modelController.text.trim().replaceFirst(RegExp(r'^models/'), ''),
+          );
       ref.invalidate(keyPresentProvider);
       _controller.clear();
       if (mounted) setState(() => _message = '연결 확인 및 암호화 저장 완료');
@@ -55,6 +61,35 @@ class _ApiKeySheetState extends ConsumerState<ApiKeySheet> {
       if (mounted) setState(() => _message = e.message);
     } catch (_) {
       if (mounted) setState(() => _message = '기기 보안 저장소를 사용할 수 없습니다.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _loadModels() async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      final key = _controller.text.trim().isNotEmpty
+          ? _controller.text.trim()
+          : await ref.read(keyStorageProvider).read() ?? '';
+      final models = await ref.read(aiProvider).discoverModels(key);
+      if (!mounted) return;
+      setState(() {
+        _models = models;
+        if (!models.any((m) => m.id == _modelController.text.trim())) {
+          _modelController.clear();
+        }
+        _message = '${models.length}개 모델을 조회했습니다. 모델을 선택하고 연결 테스트 후 저장하세요.';
+      });
+    } on AiFailure catch (e) {
+      if (mounted) setState(() => _message = e.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _message = '모델 목록을 불러오지 못했습니다. 모델 ID를 직접 입력할 수 있습니다.');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -140,15 +175,53 @@ class _ApiKeySheetState extends ConsumerState<ApiKeySheet> {
               label: const Text('Google AI Studio에서 API 키 발급받기'),
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _model,
-              decoration: const InputDecoration(labelText: 'AI 모델'),
-              items: AiSummaryService.models
-                  .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                  .toList(),
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() => _model = value!),
+            const Text(
+              'Google 모델 목록을 조회합니다. 실제 접근 권한과 할당량은 연결 테스트에서 확인합니다. 모델별 요금은 다를 수 있습니다.',
+            ),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _loadModels,
+              icon: const Icon(Icons.refresh),
+              label: const Text('사용 가능 모델 불러오기'),
+            ),
+            if (_models.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                key: ValueKey(
+                  '${_models.map((m) => m.id).join(',')}:${_modelController.text}',
+                ),
+                isExpanded: true,
+                initialValue: _models.any((m) => m.id == _modelController.text)
+                    ? _modelController.text
+                    : null,
+                decoration: const InputDecoration(labelText: '조회한 텍스트 생성 모델'),
+                items: _models
+                    .map(
+                      (m) => DropdownMenuItem(
+                        value: m.id,
+                        child: Text(
+                          '${m.label} · ${m.id}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _busy
+                    ? null
+                    : (value) => setState(() => _modelController.text = value!),
+              ),
+            ],
+            const SizedBox(height: 12),
+            TextField(
+              controller: _modelController,
+              enabled: !_busy,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: const InputDecoration(
+                labelText: '모델 ID · 직접 입력 가능',
+                helperText: '목록 조회가 어려우면 AI Studio의 모델 ID를 입력하세요.',
+                helperMaxLines: 2,
+              ),
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
             FilledButton(

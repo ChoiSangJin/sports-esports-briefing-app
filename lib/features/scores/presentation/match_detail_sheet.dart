@@ -7,6 +7,7 @@ import '../../../services/providers.dart';
 import '../../../theme/tactical_dark_theme.dart';
 import '../../settings/api_key_sheet.dart';
 import 'match_card.dart';
+import 'source_link.dart';
 
 Future<void> showMatchDetail(BuildContext context, UnifiedMatchModel match) =>
     showModalBottomSheet<void>(
@@ -63,7 +64,9 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
     });
     try {
       final key = await ref.read(keyStorageProvider).read();
-      if (key == null || key.isEmpty) {
+      if (key == null ||
+          key.isEmpty ||
+          !AiModel.validId(ref.read(aiProvider).model)) {
         if (!mounted) return;
         setState(() => _busy = false);
         await showApiKeySheet(context);
@@ -93,6 +96,11 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
       Text(widget.match.title, style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 16),
       MatchCard(match: widget.match),
+      if (widget.match.sourceUrl != null)
+        MatchSourceLink(
+          label: '${widget.match.source}에서 확인',
+          url: widget.match.sourceUrl!,
+        ),
       for (final line in widget.match.lines)
         Padding(
           padding: const EdgeInsets.only(bottom: 8),

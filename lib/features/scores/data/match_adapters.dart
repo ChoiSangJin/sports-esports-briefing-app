@@ -1,4 +1,3 @@
-import 'package:html/parser.dart' as html;
 import '../../../models/unified_match_model.dart';
 
 typedef Json = Map<String, dynamic>;
@@ -67,40 +66,4 @@ class JolpicaAdapter {
         ],
       ),
   ];
-}
-
-class LeaguepediaAdapter {
-  static List<UnifiedMatchModel> parse(Json json) => [
-    for (final row in (json['cargoquery'] as List? ?? []))
-      _match(row['title'] as Json),
-  ];
-
-  static UnifiedMatchModel _match(Json row) {
-    String value(String key) =>
-        html.parseFragment('${row[key] ?? ''}').text ?? '';
-    final time = value('DateTime UTC').isEmpty
-        ? value('DateTime_UTC')
-        : value('DateTime UTC');
-    final winner = value('Winner');
-    return UnifiedMatchModel(
-      id: 'lol:${value('MatchId')}',
-      league: League.lol,
-      startsAt: DateTime.parse('${time.replaceFirst(' ', 'T')}Z'),
-      title: value('ShownName'),
-      state: winner.isNotEmpty ? MatchState.finalScore : MatchState.scheduled,
-      status: winner.isNotEmpty
-          ? 'FINAL · ${value('Tab')}'
-          : '예정 · ${value('Tab')}',
-      participants: [
-        for (var i = 1; i <= 2; i++)
-          Participant(
-            name: value('Team$i'),
-            score: value('Team${i}Score').isEmpty
-                ? null
-                : value('Team${i}Score'),
-            winner: winner == '$i' || winner == value('Team$i'),
-          ),
-      ],
-    );
-  }
 }

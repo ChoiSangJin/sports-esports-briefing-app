@@ -31,7 +31,7 @@ class BriefingApp extends StatelessWidget {
   const BriefingApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Tactical Sports',
+    title: '스포츠 한눈에',
     debugShowCheckedModeBanner: false,
     theme: tacticalDarkTheme(),
     home: const DashboardScreen(),

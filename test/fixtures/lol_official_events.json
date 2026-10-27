@@ -1,0 +1,260 @@
+{
+  "events": [
+    {
+      "id": "115660540726095061",
+      "type": "match",
+      "state": "unstarted",
+      "startTime": "2026-10-28T20:00:00Z",
+      "league": {
+        "__typename": "League",
+        "id": "98767975604431411",
+        "name": "월드 챔피언십",
+        "image": "http://static.lolesports.com/leagues/1592594612171_WorldsDarkBG.png",
+        "slug": "worlds",
+        "displayPriority": {
+          "__typename": "Priority",
+          "status": "force_selected",
+          "position": 0
+        }
+      },
+      "blockName": "스위스",
+      "matchTeams": [
+        {
+          "__typename": "MatchTeam",
+          "id": "115660540726095061:103461966965149786",
+          "teamId": "103461966965149786",
+          "homeLeague": {
+            "__typename": "HomeLeague",
+            "image": "http://static.lolesports.com/leagues/1592516184297_LEC-01-FullonDark.png",
+            "regionSlug": "emea"
+          },
+          "name": "Movistar KOI",
+          "image": "http://static.lolesports.com/teams/1734012609283_MKOI_FullColor_Blue.png",
+          "lightImage": null,
+          "code": "MKOI",
+          "result": {
+            "__typename": "TeamResult",
+            "gameWins": 0,
+            "outcome": null
+          }
+        },
+        {
+          "__typename": "MatchTeam",
+          "id": "115660540726095061:98767991853197861",
+          "teamId": "98767991853197861",
+          "homeLeague": {
+            "__typename": "HomeLeague",
+            "image": "http://static.lolesports.com/leagues/lck-color-on-black.png",
+            "regionSlug": "kr"
+          },
+          "name": "T1",
+          "image": "http://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png",
+          "lightImage": "http://static.lolesports.com/teams/1592589079406_T1T1-02-SingleonDark.png",
+          "code": "T1",
+          "result": {
+            "__typename": "TeamResult",
+            "gameWins": 0,
+            "outcome": null
+          }
+        }
+      ],
+      "match": {
+        "strategy": {
+          "__typename": "MatchStrategy",
+          "type": "bestOf",
+          "count": 3
+        },
+        "games": [
+          {
+            "number": 1,
+            "state": "unstarted"
+          },
+          {
+            "number": 2,
+            "state": "unstarted"
+          },
+          {
+            "number": 3,
+            "state": "unstarted"
+          }
+        ]
+      }
+    },
+    {
+      "id": "115660588583171786",
+      "type": "match",
+      "state": "completed",
+      "startTime": "2026-10-15T18:00:00Z",
+      "league": {
+        "__typename": "League",
+        "id": "98767975604431411",
+        "name": "월드 챔피언십",
+        "image": "http://static.lolesports.com/leagues/1592594612171_WorldsDarkBG.png",
+        "slug": "worlds",
+        "displayPriority": {
+          "__typename": "Priority",
+          "status": "force_selected",
+          "position": 0
+        }
+      },
+      "blockName": "플레이-인",
+      "matchTeams": [
+        {
+          "__typename": "MatchTeam",
+          "id": "115660588583171786:111692118851466302",
+          "teamId": "111692118851466302",
+          "homeLeague": {
+            "__typename": "HomeLeague",
+            "image": "http://static.lolesports.com/leagues/1592516184297_LEC-01-FullonDark.png",
+            "regionSlug": "emea"
+          },
+          "name": "Karmine Corp",
+          "image": "http://static.lolesports.com/teams/1704714951336_KC.png",
+          "lightImage": null,
+          "code": "KC",
+          "result": {
+            "__typename": "TeamResult",
+            "gameWins": 3,
+            "outcome": "win"
+          }
+        },
+        {
+          "__typename": "MatchTeam",
+          "id": "115660588583171786:98767991877340524",
+          "teamId": "98767991877340524",
+          "homeLeague": {
+            "__typename": "HomeLeague",
+            "image": "http://static.lolesports.com/leagues/1706356907418_LCSNew-01-FullonDark.png",
+            "regionSlug": "na"
+          },
+          "name": "Cloud9 Kia",
+          "image": "http://static.lolesports.com/teams/1736924120254_C9Kia_IconBlue_Transparent_2000x2000.png",
+          "lightImage": null,
+          "code": "C9",
+          "result": {
+            "__typename": "TeamResult",
+            "gameWins": 2,
+            "outcome": "loss"
+          }
+        }
+      ],
+      "match": {
+        "strategy": {
+          "__typename": "MatchStrategy",
+          "type": "bestOf",
+          "count": 5
+        },
+        "games": [
+          {
+            "number": 1,
+            "state": "completed"
+          },
+          {
+            "number": 2,
+            "state": "completed"
+          },
+          {
+            "number": 3,
+            "state": "completed"
+          },
+          {
+            "number": 4,
+            "state": "completed"
+          },
+          {
+            "number": 5,
+            "state": "completed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "117275453885353242",
+      "type": "match",
+      "state": "completed",
+      "startTime": "2026-10-12T21:00:00Z",
+      "league": {
+        "__typename": "League",
+        "id": "117370077081924460",
+        "name": "CBLOL Promotion",
+        "image": "http://static.lolesports.com/leagues/1790925246191_600px-CBLOL_2021_darkmode1.png",
+        "slug": "cblol_promotion",
+        "displayPriority": {
+          "__typename": "Priority",
+          "status": "hidden",
+          "position": 1000
+        }
+      },
+      "blockName": "결승",
+      "matchTeams": [
+        {
+          "__typename": "MatchTeam",
+          "id": "117275453885353242:109480204628225868",
+          "teamId": "109480204628225868",
+          "homeLeague": {
+            "__typename": "HomeLeague",
+            "image": "http://static.lolesports.com/leagues/cblol-logo-symbol-offwhite.png",
+            "regionSlug": "br"
+          },
+          "name": "LOS",
+          "image": "http://static.lolesports.com/teams/1784013312149_LOS-OLaranja.png",
+          "lightImage": null,
+          "code": "LOS",
+          "result": {
+            "__typename": "TeamResult",
+            "gameWins": 3,
+            "outcome": "win"
+          }
+        },
+        {
+          "__typename": "MatchTeam",
+          "id": "117275453885353242:105549995617170853",
+          "teamId": "105549995617170853",
+          "homeLeague": {
+            "__typename": "HomeLeague",
+            "image": "http://static.lolesports.com/leagues/1739883216140_CIRCUITO_DESAFIANTE_COLOR_ORANGE.png",
+            "regionSlug": "br"
+          },
+          "name": "KaBuM! Eports",
+          "image": "http://static.lolesports.com/teams/1774199720854_kbm_c_w.png",
+          "lightImage": "http://static.lolesports.com/teams/1774199720854_kbm_w.png",
+          "code": "KBM",
+          "result": {
+            "__typename": "TeamResult",
+            "gameWins": 1,
+            "outcome": "loss"
+          }
+        }
+      ],
+      "match": {
+        "strategy": {
+          "__typename": "MatchStrategy",
+          "type": "bestOf",
+          "count": 5
+        },
+        "games": [
+          {
+            "number": 1,
+            "state": "completed"
+          },
+          {
+            "number": 2,
+            "state": "completed"
+          },
+          {
+            "number": 3,
+            "state": "completed"
+          },
+          {
+            "number": 4,
+            "state": "completed"
+          },
+          {
+            "number": 5,
+            "state": "unneeded"
+          }
+        ]
+      }
+    }
+  ]
+}

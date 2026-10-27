@@ -24,7 +24,7 @@ void main() {
   late MemoryKeys keys;
   late UnifiedMatchModel fixture;
   setUp(() async {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({'ai_model': 'gemini-test-model'});
     preferences = await SharedPreferences.getInstance();
     keys = MemoryKeys();
     fixture = UnifiedMatchModel(

@@ -48,13 +48,7 @@ class MatchCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        match.isExample
-                            ? '예시 · 실제 경기 아님'
-                            : match.state == MatchState.finalScore
-                            ? 'FINAL'
-                            : match.state == MatchState.live
-                            ? 'LIVE'
-                            : '예정',
+                        match.isExample ? '예시 · 실제 경기 아님' : match.state.label,
                         style: TextStyle(color: color),
                       ),
                     ),
