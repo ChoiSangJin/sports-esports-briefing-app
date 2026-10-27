@@ -1,4 +1,5 @@
 import 'compact_table.dart';
+import 'record_sections.dart';
 import '../../../models/match_detail.dart';
 import 'team_statistics_table.dart';
 import 'package:flutter/material.dart';
@@ -196,7 +197,15 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
         TeamStatisticsTable(detail: _detail),
       ],
       const SizedBox(height: 24),
-      const Text('원문 리포트', style: TextStyle(fontWeight: FontWeight.bold)),
+      if (!_loading) ...[
+        for (final notice in _detail.notices)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(notice),
+          ),
+        RecordSections(sections: _detail.sections),
+      ],
+      const Text('리포트 · 공식 기록', style: TextStyle(fontWeight: FontWeight.bold)),
       const SizedBox(height: 8),
       if (_loading)
         const LinearProgressIndicator()
@@ -223,8 +232,11 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
       ],
       if (_detail.news.isNotEmpty) ...[
         const SizedBox(height: 20),
-        const Text('ESPN 관련 기사', style: TextStyle(fontWeight: FontWeight.bold)),
-        const Text('관련 뉴스이며 이 경기만의 리포트가 아닐 수 있습니다.'),
+        const Text(
+          '관련 기사 · 공식 자료',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const Text('제공처의 관련 자료이며 이 경기만의 리포트가 아닐 수 있습니다.'),
         for (final article in _detail.news)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

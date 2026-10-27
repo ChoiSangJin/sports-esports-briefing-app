@@ -61,6 +61,7 @@ class UnifiedMatchModel {
     this.isExample = false,
     this.source = '',
     this.sourceUrl,
+    this.detailParameters = const {},
   });
   final String id, title, status, report;
   final League league;
@@ -72,6 +73,7 @@ class UnifiedMatchModel {
   final bool isExample;
   final String source;
   final String? sourceUrl;
+  final Map<String, String> detailParameters;
 
   String get aiContext => [
     'Source: ${league.label}; match: $id; date: ${startsAt.toIso8601String()}',

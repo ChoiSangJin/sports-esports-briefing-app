@@ -12,11 +12,15 @@ class MatchDetail {
     this.teams = const [],
     this.news = const [],
     this.plays = const [],
+    this.sections = const [],
+    this.notices = const [],
   });
   final String article;
   final List<TeamStatistics> teams;
   final List<RelatedArticle> news;
   final List<String> plays;
+  final List<RecordSection> sections;
+  final List<String> notices;
   List<String> get statKeys =>
       {for (final team in teams) ...team.values.keys}.toList();
   String label(String key) {
@@ -30,6 +34,11 @@ class MatchDetail {
     article,
     if (plays.isNotEmpty) '제공처의 주요 경기 기록:',
     ...plays,
+    for (final section in sections) ...[
+      section.title,
+      section.headers.join(' | '),
+      for (final row in section.rows) row.join(' | '),
+    ],
     for (final team in teams) ...[
       team.name,
       for (final key in team.values.keys)
@@ -96,6 +105,13 @@ class MatchDetail {
       labels,
     );
   }
+}
+
+class RecordSection {
+  const RecordSection(this.title, this.headers, this.rows);
+  final String title;
+  final List<String> headers;
+  final List<List<String>> rows;
 }
 
 class RelatedArticle {
