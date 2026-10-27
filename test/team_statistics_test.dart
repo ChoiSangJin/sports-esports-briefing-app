@@ -36,27 +36,26 @@ void main() {
       expect(detail.asText, contains('Rebounds: 40'));
     },
   );
-  testWidgets(
-    'phone table scrolls horizontally and shows both teams and missing marker',
-    (tester) async {
-      tester.view.physicalSize = const Size(393, 852);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: TeamStatisticsTable(detail: detail)),
-        ),
-      );
-      expect(find.byType(DataTable), findsOneWidget);
-      expect(find.text('리바운드'), findsOneWidget);
-      expect(find.text('—'), findsOneWidget);
-      await tester.drag(
-        find.byType(SingleChildScrollView).first,
-        const Offset(-500, 0),
-      );
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      expect(find.text('Other Team'), findsOneWidget);
-    },
-  );
+  testWidgets('phone table shows both teams without horizontal scrolling', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: TeamStatisticsTable(detail: detail)),
+      ),
+    );
+    expect(find.byType(Table), findsOneWidget);
+    expect(find.text('리바운드'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
+    expect(find.byType(SingleChildScrollView), findsNothing);
+    expect(
+      tester.getBottomRight(find.text('Other Team')).dx,
+      lessThanOrEqualTo(393),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('Other Team'), findsOneWidget);
+  });
 }
