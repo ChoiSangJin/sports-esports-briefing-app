@@ -74,7 +74,8 @@ void main() {
       repository.load(League.nfl, DateTime(2026)),
     ]);
     expect(results.first.warning, contains('NBA'));
-    expect(results.last.warning, isNull);
+    expect(results.last.warning, contains('14일'));
+    expect(results.last.warning, isNot(contains('데이터를 불러오지 못')));
     expect(results.first.matches, isEmpty);
   });
 }

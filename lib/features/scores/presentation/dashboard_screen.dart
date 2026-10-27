@@ -227,6 +227,14 @@ class _LeagueSection extends ConsumerWidget {
           data: (data) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (data.isUpcoming)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    '선택한 날짜에 경기가 없어 다음 예정 경기를 표시합니다.',
+                    style: TextStyle(color: TacticalColors.secondary),
+                  ),
+                ),
               if (league == League.lol)
                 const MatchSourceLink(
                   label: 'LoL 공식 일정 · 공개된 일정 범위',
@@ -270,9 +278,19 @@ class _LeagueSection extends ConsumerWidget {
                   ),
                 ),
               for (final match in data.matches)
-                MatchCard(
-                  match: match,
-                  onTap: () => showMatchDetail(context, match),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (data.isUpcoming)
+                      Text(
+                        '${match.startsAt.toLocal().year}.${match.startsAt.toLocal().month.toString().padLeft(2, '0')}.${match.startsAt.toLocal().day.toString().padLeft(2, '0')} ${match.startsAt.toLocal().hour.toString().padLeft(2, '0')}:${match.startsAt.toLocal().minute.toString().padLeft(2, '0')}',
+                        style: const TextStyle(color: TacticalColors.secondary),
+                      ),
+                    MatchCard(
+                      match: match,
+                      onTap: () => showMatchDetail(context, match),
+                    ),
+                  ],
                 ),
             ],
           ),

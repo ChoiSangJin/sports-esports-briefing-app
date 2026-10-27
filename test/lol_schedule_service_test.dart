@@ -95,7 +95,11 @@ void main() {
       await repository.load(League.lol, day);
       expect(requests, 2);
       final outside = await repository.load(League.lol, DateTime(2000));
-      expect(outside.warning, contains('범위 밖'));
+      expect(outside.isUpcoming, isTrue);
+      expect(
+        outside.matches.every((m) => m.state == MatchState.scheduled),
+        isTrue,
+      );
     },
   );
 }

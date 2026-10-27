@@ -70,3 +70,5 @@ flutter build apk --release --target-platform android-arm64 --split-per-abi
 출력: `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`. `apksigner verify --verbose`로 서명 확인 후 GitHub Release에 APK와 SHA256SUMS를 게시합니다. Android에서 다운로드한 APK의 설치를 허용해야 합니다. Play Store 게시는 별도 작업입니다.
 
 반복 배포는 `Android Release` Actions workflow를 main에서 실행합니다. 저장소 Actions secrets에 `ANDROID_KEYSTORE_BASE64`(keystore의 base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`가 필요합니다. 비밀값은 코드·이슈·PR·공개 Release에 올리지 마세요. 키와 비밀번호는 안전하게 별도 백업해야 합니다. 릴리스 전에 pubspec 버전과 Android versionCode를 증가시켜 주세요.
+
+선택 날짜에 경기가 없으면 다음 예정 경기를 날짜·시간과 함께 표시합니다. LoL은 공개 일정 범위, F1은 당해/다음 해 달력, ESPN/KBO는 검색 시작일부터 14일 범위를 사용합니다. 과거 날짜 선택 시 예정 경기 검색은 오늘부터 시작합니다.
