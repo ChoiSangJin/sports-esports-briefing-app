@@ -10,7 +10,11 @@ Future<void> showApiKeySheet(BuildContext context) =>
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => const ApiKeySheet(),
+      builder: (_) => const SafeArea(
+        top: false,
+        maintainBottomViewPadding: true,
+        child: ApiKeySheet(),
+      ),
     );
 
 class ApiKeySheet extends ConsumerStatefulWidget {

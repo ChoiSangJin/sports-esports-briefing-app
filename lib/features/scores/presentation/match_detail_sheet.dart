@@ -16,7 +16,11 @@ Future<void> showMatchDetail(BuildContext context, UnifiedMatchModel match) =>
       useSafeArea: true,
       builder: (_) => FractionallySizedBox(
         heightFactor: 0.85,
-        child: MatchDetailSheet(match: match),
+        child: SafeArea(
+          top: false,
+          maintainBottomViewPadding: true,
+          child: MatchDetailSheet(match: match),
+        ),
       ),
     );
 
