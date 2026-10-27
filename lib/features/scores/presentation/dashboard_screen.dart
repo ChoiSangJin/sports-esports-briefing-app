@@ -4,9 +4,9 @@ import '../../../models/unified_match_model.dart';
 import '../../../services/providers.dart';
 import '../../../theme/tactical_dark_theme.dart';
 import '../../settings/api_key_sheet.dart';
-import '../data/kbo_scraper_service.dart';
 import 'match_card.dart';
 import 'match_detail_sheet.dart';
+import 'source_link.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -28,7 +28,7 @@ class DashboardScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'TACTICAL SPORTS',
+              '스포츠 한눈에',
               style: TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.w900,
@@ -159,6 +159,7 @@ class DashboardScreen extends ConsumerWidget {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
+                  ref.read(repositoryProvider).clearCache();
                   final targets = selected == null ? leagues : [selected];
                   for (final league in targets) {
                     ref.invalidate(leagueScoresProvider(league));
@@ -226,6 +227,17 @@ class _LeagueSection extends ConsumerWidget {
           data: (data) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (league == League.lol)
+                const MatchSourceLink(
+                  label: 'LoL 공식 일정 · 공개된 일정 범위',
+                  url: 'https://lolesports.com/ko-KR/schedule',
+                ),
+              if (league == League.kbo)
+                const MatchSourceLink(
+                  label: 'KBO 공식 게임센터',
+                  url:
+                      'https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx',
+                ),
               if (data.warning != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -244,16 +256,6 @@ class _LeagueSection extends ConsumerWidget {
                                 ref.invalidate(leagueScoresProvider(league)),
                             child: const Text('다시 시도'),
                           ),
-                          if (league == League.kbo)
-                            TextButton(
-                              onPressed: () => showMatchDetail(
-                                context,
-                                KboScraperService.example(
-                                  ref.read(selectedDateProvider),
-                                ),
-                              ),
-                              child: const Text('예시 화면 보기 (실제 경기 아님)'),
-                            ),
                         ],
                       ),
                     ],

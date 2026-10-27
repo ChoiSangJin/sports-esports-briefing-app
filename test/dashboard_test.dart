@@ -8,10 +8,23 @@ import 'package:sports_esports_briefing/main.dart';
 import 'package:sports_esports_briefing/models/unified_match_model.dart';
 import 'package:sports_esports_briefing/services/api_key_storage_service.dart';
 import 'package:sports_esports_briefing/services/providers.dart';
+import 'package:sports_esports_briefing/services/ai_summary_service.dart';
+import 'package:sports_esports_briefing/services/gemini_api.dart';
+import 'support/http_fixture.dart';
 
 class NoKeys extends ApiKeyStorageService {
   @override
   Future<String?> read() async => null;
+}
+
+class SavedKeys extends ApiKeyStorageService {
+  String? value;
+  @override
+  Future<String?> read() async => value;
+  @override
+  Future<void> save(String value) async {
+    this.value = value;
+  }
 }
 
 class FixtureRepository extends ScoreRepository {
@@ -41,6 +54,84 @@ class FixtureRepository extends ScoreRepository {
 }
 
 void main() {
+  testWidgets(
+    'Google model list can select and validate a newer model on a phone-sized settings sheet',
+    (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await SharedPreferences.getInstance();
+      final keys = SavedKeys();
+      var calls = 0;
+      final dio = Dio()
+        ..httpClientAdapter = HttpFixture((options) {
+          calls++;
+          if (options.method == 'GET') {
+            return jsonResponse({
+              'models': [
+                {
+                  'name': 'models/gemini-3.8-flash',
+                  'displayName': 'Gemini 3.8 Flash',
+                  'supportedGenerationMethods': ['generateContent'],
+                },
+              ],
+            });
+          }
+          expect(
+            options.uri.path,
+            contains('gemini-3.8-flash:generateContent'),
+          );
+          return jsonResponse({
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {'text': 'OK'},
+                  ],
+                },
+              },
+            ],
+          });
+        });
+      final service = AiSummaryService(preferences, keys, api: GeminiApi(dio));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            preferencesProvider.overrideWithValue(preferences),
+            repositoryProvider.overrideWithValue(FixtureRepository()),
+            keyStorageProvider.overrideWithValue(keys),
+            aiProvider.overrideWithValue(service),
+          ],
+          child: const BriefingApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('API Key & 설정'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, ' fixture-key ');
+      final load = find.text('사용 가능 모델 불러오기');
+      await tester.ensureVisible(load);
+      await tester.tap(load);
+      await tester.pumpAndSettle();
+      final dropdown = find.byType(DropdownButtonFormField<String>);
+      await tester.ensureVisible(dropdown);
+      await tester.tap(dropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Gemini 3.8 Flash · gemini-3.8-flash').last);
+      await tester.pumpAndSettle();
+      final save = find.text('연결 테스트 및 암호화 저장');
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(keys.value, 'fixture-key');
+      expect(preferences.getString('ai_model'), 'gemini-3.8-flash');
+      expect(calls, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'filter opens match detail and missing key leads to registration',
     (tester) async {
@@ -74,7 +165,8 @@ void main() {
       await tester.tap(button);
       await tester.pumpAndSettle();
       expect(find.text('연결 테스트 및 암호화 저장'), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
+      expect(find.text('Gemini API 키'), findsOneWidget);
+      expect(find.text('사용 가능 모델 불러오기'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

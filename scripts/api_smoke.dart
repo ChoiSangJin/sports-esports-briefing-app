@@ -28,6 +28,14 @@ Future<void> main() async {
     stdout.writeln(
       '${r.league.label}: ${r.warning ?? '${r.matches.length} matches'}',
     );
+    if (r.source.isNotEmpty) stdout.writeln('  source: ${r.source}');
+    if (r.league == League.lol || r.league == League.kbo) {
+      for (final match in r.matches.take(3)) {
+        stdout.writeln(
+          '  ${match.startsAt.toLocal().toIso8601String()} ${match.status} ${match.participants.map((p) => '${p.name} ${p.score ?? "—"}').join(' vs ')}',
+        );
+      }
+    }
     if (r.matches.isNotEmpty && ScoreRepository.paths.containsKey(r.league)) {
       try {
         final detail = await repository.detail(r.matches.first);

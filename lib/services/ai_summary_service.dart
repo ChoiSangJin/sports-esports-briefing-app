@@ -1,33 +1,55 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/unified_match_model.dart';
 import 'api_key_storage_service.dart';
+import 'gemini_api.dart';
+export 'gemini_api.dart' show AiFailure, AiModel;
 
 typedef GenerateText =
     Future<String> Function(String key, String model, String prompt);
 
-class AiFailure implements Exception {
-  const AiFailure(this.message);
-  final String message;
-}
-
 class AiSummaryService {
-  AiSummaryService(this.preferences, this.keys, {GenerateText? generate})
-    : _generate = generate ?? _gemini;
+  AiSummaryService(
+    this.preferences,
+    this.keys, {
+    GenerateText? generate,
+    GeminiApi? api,
+  }) : _api = api ?? GeminiApi(),
+       _generate = generate;
+  final GeminiApi _api;
   final SharedPreferences preferences;
   final ApiKeyStorageService keys;
-  final GenerateText _generate;
+  final GenerateText? _generate;
+  void dispose() => _api.close();
   final Map<String, Future<String>> _pending = {};
-  static const models = ['gemini-2.5-flash', 'gemini-2.5-pro'];
-  String get model {
-    final saved = preferences.getString('ai_model');
-    return models.contains(saved) ? saved! : models.first;
+  String get model => preferences.getString('ai_model') ?? '';
+
+  List<AiModel> get availableModels {
+    try {
+      final list =
+          jsonDecode(preferences.getString('ai_models') ?? '[]') as List;
+      return [
+        for (final row in list)
+          if (AiModel.validId(row['id'] as String))
+            AiModel(row['id'] as String, row['label'] as String),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<AiModel>> discoverModels(String key) async {
+    final result = await _api.listModels(key);
+    await preferences.setString(
+      'ai_models',
+      jsonEncode(result.map((m) => m.toJson()).toList()),
+    );
+    return result;
   }
 
   Future<void> setModel(String value) async {
-    if (!models.contains(value)) throw ArgumentError('Unsupported model');
+    if (!AiModel.validId(value)) throw ArgumentError('Invalid model ID');
     await preferences.setString('ai_model', value);
   }
 
@@ -55,8 +77,8 @@ class AiSummaryService {
   Future<void> validateAndSave(String raw, String selectedModel) async {
     final key = raw.trim();
     if (key.isEmpty) throw const AiFailure('API 키를 입력해 주세요.');
-    if (!models.contains(selectedModel)) {
-      throw const AiFailure('지원하지 않는 모델입니다.');
+    if (!AiModel.validId(selectedModel)) {
+      throw const AiFailure('사용할 모델을 선택하거나 모델 ID를 입력해 주세요.');
     }
     await _request(key, selectedModel, 'Reply with OK only.');
     await keys.save(key);
@@ -88,6 +110,9 @@ class AiSummaryService {
     String cacheKey,
     String selectedModel,
   ) async {
+    if (!AiModel.validId(selectedModel)) {
+      throw const AiFailure('설정에서 사용할 AI 모델을 선택해 주세요.');
+    }
     final key = await keys.read();
     if (key == null || key.isEmpty) {
       throw const AiFailure('설정에서 Gemini API 키를 등록해 주세요.');
@@ -127,7 +152,7 @@ $clipped
     String prompt,
   ) async {
     try {
-      final result = await _generate(
+      final result = await (_generate ?? _api.generate)(
         key,
         selectedModel,
         prompt,
@@ -144,17 +169,5 @@ $clipped
       // SDK exceptions may contain request details: never render/log them.
       throw const AiFailure('AI 요청에 실패했습니다. 키, 모델 접근 권한, 할당량과 네트워크를 확인하세요.');
     }
-  }
-
-  static Future<String> _gemini(String key, String model, String prompt) async {
-    final response = await GenerativeModel(
-      model: model,
-      apiKey: key,
-      generationConfig: GenerationConfig(
-        temperature: 0.2,
-        maxOutputTokens: 2048,
-      ),
-    ).generateContent([Content.text(prompt)]);
-    return response.text ?? '';
   }
 }

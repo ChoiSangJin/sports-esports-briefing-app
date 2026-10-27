@@ -1,18 +1,27 @@
 import 'package:dio/dio.dart';
 import '../../../models/unified_match_model.dart';
 import 'match_adapters.dart';
-import 'kbo_scraper_service.dart';
+import 'kbo_service.dart';
+import 'lol_schedule_service.dart';
 
 class LeagueResult {
-  const LeagueResult(this.league, this.matches, [this.warning]);
+  const LeagueResult(
+    this.league,
+    this.matches, [
+    this.warning,
+    this.source = '',
+  ]);
   final League league;
   final List<UnifiedMatchModel> matches;
   final String? warning;
+  final String source;
 }
 
 class ScoreRepository {
-  ScoreRepository(this.dio);
+  ScoreRepository(this.dio) : _lol = LolScheduleService(dio);
   final Dio dio;
+  final LolScheduleService _lol;
+  void clearCache() => _lol.clearCache();
   static const paths = {
     League.nfl: 'football/nfl',
     League.nba: 'basketball/nba',
@@ -22,6 +31,7 @@ class ScoreRepository {
   Future<LeagueResult> load(League league, DateTime day) async {
     try {
       List<UnifiedMatchModel> matches;
+      var source = '';
       if (paths.containsKey(league)) {
         String date(DateTime d) =>
             '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
@@ -49,35 +59,34 @@ class ScoreRepository {
         );
         matches = JolpicaAdapter.parse(r.data!);
       } else if (league == League.lol) {
-        // Query a UTC window enclosing the selected local day, then filter locally.
-        final start = DateTime(day.year, day.month, day.day).toUtc();
-        final end = DateTime(day.year, day.month, day.day + 1).toUtc();
-        String cargoDate(DateTime d) =>
-            d.toIso8601String().substring(0, 19).replaceFirst('T', ' ');
-        final r = await dio.get<Json>(
-          'https://lol.fandom.com/api.php',
-          queryParameters: {
-            'action': 'cargoquery',
-            'format': 'json',
-            'tables': 'MatchSchedule',
-            'fields':
-                'Team1,Team2,Team1Score,Team2Score,Winner,DateTime_UTC,Tab,ShownName,MatchId',
-            'where':
-                "(ShownName LIKE '%LCK%' OR ShownName LIKE '%Worlds%' OR ShownName LIKE '%MSI%') AND DateTime_UTC >= '${cargoDate(start)}' AND DateTime_UTC < '${cargoDate(end)}'",
-            'order_by': 'DateTime_UTC ASC',
-            'limit': 100,
-          },
-        );
-        if (r.data?.containsKey('error') == true) {
-          throw const FormatException('Cargo error');
+        matches = await _lol.load();
+        source = 'LoL e스포츠 공식 일정';
+        if (matches.isNotEmpty) {
+          DateTime dateOnly(DateTime d) {
+            final local = d.toLocal();
+            return DateTime(local.year, local.month, local.day);
+          }
+
+          final first = dateOnly(matches.first.startsAt),
+              last = dateOnly(matches.last.startsAt);
+          if (day.isBefore(first) || day.isAfter(last)) {
+            return LeagueResult(
+              league,
+              const [],
+              '선택한 날짜는 공식 페이지가 제공한 일정 범위 밖입니다. 공식 일정에서 확인해 주세요.',
+              source,
+            );
+          }
         }
-        matches = LeaguepediaAdapter.parse(r.data!);
       } else {
-        matches = await KboScraperService(dio).load(day);
+        matches = await KboService(dio).load(day);
+        source = 'KBO 공식 게임센터';
       }
       return LeagueResult(
         league,
         matches.where((m) => sameDay(m.startsAt, day)).toList(),
+        null,
+        source,
       );
     } catch (_) {
       return LeagueResult(

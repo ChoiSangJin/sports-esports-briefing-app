@@ -14,12 +14,14 @@ final keyPresentProvider = FutureProvider<bool>((ref) async {
   final key = await ref.watch(keyStorageProvider).read();
   return key != null && key.isNotEmpty;
 });
-final aiProvider = Provider(
-  (ref) => AiSummaryService(
+final aiProvider = Provider((ref) {
+  final service = AiSummaryService(
     ref.watch(preferencesProvider),
     ref.watch(keyStorageProvider),
-  ),
-);
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});
 final dioProvider = Provider((ref) {
   final dio = Dio(
     BaseOptions(

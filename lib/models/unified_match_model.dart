@@ -2,7 +2,7 @@ enum League { lol, f1, mlb, nba, nfl, kbo }
 
 extension LeagueLabel on League {
   String get label => switch (this) {
-    League.lol => 'LCK / LoL',
+    League.lol => 'LoL e스포츠',
     League.f1 => 'F1',
     League.mlb => 'MLB',
     League.nba => 'NBA',
@@ -11,7 +11,16 @@ extension LeagueLabel on League {
   };
 }
 
-enum MatchState { scheduled, live, finalScore }
+enum MatchState { scheduled, live, finalScore, cancelled }
+
+extension MatchStateLabel on MatchState {
+  String get label => switch (this) {
+    MatchState.scheduled => '예정',
+    MatchState.live => 'LIVE',
+    MatchState.finalScore => 'FINAL',
+    MatchState.cancelled => '취소 / 연기',
+  };
+}
 
 class Participant {
   const Participant({
@@ -50,6 +59,8 @@ class UnifiedMatchModel {
     this.report = '',
     this.lines = const [],
     this.isExample = false,
+    this.source = '',
+    this.sourceUrl,
   });
   final String id, title, status, report;
   final League league;
@@ -59,11 +70,14 @@ class UnifiedMatchModel {
   final List<RaceStanding> standings;
   final List<String> lines;
   final bool isExample;
+  final String source;
+  final String? sourceUrl;
 
   String get aiContext => [
     'Source: ${league.label}; match: $id; date: ${startsAt.toIso8601String()}',
     title,
     status,
+    if (source.isNotEmpty) 'Data provider: $source',
     for (final p in participants) '${p.name}: ${p.score ?? "scheduled"}',
     ...lines,
     for (final r in standings)
