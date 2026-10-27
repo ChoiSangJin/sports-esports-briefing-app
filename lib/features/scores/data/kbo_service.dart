@@ -114,6 +114,12 @@ class KboService {
           state: state,
           status: '$label · ${g['S_NM'] ?? ''} · $time KST',
           source: 'KBO 공식 게임센터',
+          detailParameters: {
+            'leId': '${g['LE_ID'] ?? 1}',
+            'srId': '${g['SR_ID']}',
+            'seasonId': '${g['SEASON_ID']}',
+            'gameId': id,
+          },
           sourceUrl:
               'https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx?gameDate=$requested&gameId=$id',
           participants: [

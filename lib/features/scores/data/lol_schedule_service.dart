@@ -122,6 +122,13 @@ class LolScheduleService {
       state: state,
       status: '$league · $label${bestOf != null ? ' · Bo$bestOf' : ''}',
       source: 'LoL e스포츠 공식 일정',
+      detailParameters: {
+        'teams': jsonEncode({
+          for (final team in teams)
+            '${team['teamId']}': '${team['name'] ?? team['code'] ?? '팀'}',
+        }),
+        'games': jsonEncode(event['match']?['games'] ?? []),
+      },
       sourceUrl: scheduleUrl,
       participants: teams
           .map((team) => _participant(team as Map<String, dynamic>, state))

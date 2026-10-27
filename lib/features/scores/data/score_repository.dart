@@ -4,6 +4,8 @@ import '../../../models/unified_match_model.dart';
 import 'match_adapters.dart';
 import 'kbo_service.dart';
 import 'lol_schedule_service.dart';
+import 'kbo_detail_service.dart';
+import 'lol_detail_service.dart';
 
 class LeagueResult {
   const LeagueResult(
@@ -230,6 +232,19 @@ class ScoreRepository {
       (await details(match)).asText;
 
   Future<MatchDetail> details(UnifiedMatchModel match) async {
+    if (match.league == League.lol) return LolDetailService(dio).load(match);
+    if (match.league == League.kbo) {
+      try {
+        return await KboDetailService(dio).load(match);
+      } catch (_) {
+        return MatchDetail(
+          article: match.report,
+          notices: const [
+            'KBO 상세 기록이 아직 게시되지 않았거나 조회에 실패했습니다. 공식 게임센터에서 확인해 주세요.',
+          ],
+        );
+      }
+    }
     if (!paths.containsKey(match.league)) {
       return MatchDetail(article: match.report);
     }
