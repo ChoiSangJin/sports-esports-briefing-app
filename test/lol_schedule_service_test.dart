@@ -34,6 +34,10 @@ void main() {
       expect(worlds.participants.where((p) => p.winner), hasLength(1));
       expect(matches.any((m) => m.title.contains('CBLOL')), isTrue);
       expect(
+        matches.singleWhere((m) => m.title.contains('CBLOL')).lines.last,
+        '5세트: 미실시',
+      );
+      expect(
         upcoming.participants.every(
           (p) => p.logo?.startsWith('https://') == true,
         ),

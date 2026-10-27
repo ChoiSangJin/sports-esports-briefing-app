@@ -131,7 +131,10 @@ class LolScheduleService {
           '${game['number']}세트: ${switch (game['state']) {
             'completed' => '종료',
             'inProgress' => '진행 중',
-            _ => '예정',
+            'unneeded' => '미실시',
+            'cancelled' || 'canceled' || 'postponed' => '취소 / 연기',
+            'unstarted' => '예정',
+            _ => '상태 미정',
           }}',
       ],
     );
