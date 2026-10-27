@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:html/parser.dart' as html;
+import '../../../services/report_text.dart';
 import '../../../models/unified_match_model.dart';
 import '../../../services/ai_summary_service.dart';
 import '../../../services/providers.dart';
@@ -46,7 +46,7 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
     try {
       final report = await ref.read(repositoryProvider).detail(widget.match);
       if (mounted) {
-        setState(() => _report = html.parseFragment(report).text ?? '');
+        setState(() => _report = readableReport(report));
       }
     } catch (_) {
       if (mounted) {
