@@ -1,3 +1,4 @@
+import 'package:sports_esports_briefing/models/match_detail.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +49,9 @@ class FixtureRepository extends ScoreRepository {
           ]
         : [],
   );
+  @override
+  Future<MatchDetail> details(UnifiedMatchModel match) async =>
+      MatchDetail(article: await detail(match));
   @override
   Future<String> detail(UnifiedMatchModel match) async =>
       'Verified game report';

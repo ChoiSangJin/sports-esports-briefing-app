@@ -1,3 +1,4 @@
+import '../../../models/match_detail.dart';
 import 'package:dio/dio.dart';
 import '../../../models/unified_match_model.dart';
 import 'match_adapters.dart';
@@ -225,28 +226,18 @@ class ScoreRepository {
     }
   }
 
-  Future<String> detail(UnifiedMatchModel match) async {
-    if (!paths.containsKey(match.league)) return match.report;
+  Future<String> detail(UnifiedMatchModel match) async =>
+      (await details(match)).asText;
+
+  Future<MatchDetail> details(UnifiedMatchModel match) async {
+    if (!paths.containsKey(match.league)) {
+      return MatchDetail(article: match.report);
+    }
     final id = match.id.split(':').last;
-    final r = await dio.get<Json>(
+    final response = await dio.get<Json>(
       'https://site.api.espn.com/apis/site/v2/sports/${paths[match.league]}/summary',
       queryParameters: {'event': id},
     );
-    final data = r.data!;
-    final article = data['article'] as Json?;
-    final text = StringBuffer();
-    if (article != null) {
-      text.writeln(article['headline'] ?? '');
-      text.writeln(article['story'] ?? '');
-    }
-    for (final team in (data['boxscore']?['teams'] as List? ?? [])) {
-      text.writeln(team['team']?['displayName'] ?? '');
-      for (final stat in (team['statistics'] as List? ?? [])) {
-        text.writeln(
-          '${stat['label'] ?? stat['name']}: ${stat['displayValue']}',
-        );
-      }
-    }
-    return text.toString();
+    return MatchDetail.fromEspn(response.data!);
   }
 }

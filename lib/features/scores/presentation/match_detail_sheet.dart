@@ -1,3 +1,5 @@
+import '../../../models/match_detail.dart';
+import 'team_statistics_table.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../services/report_text.dart';
@@ -33,6 +35,7 @@ class MatchDetailSheet extends ConsumerStatefulWidget {
 
 class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
   String _report = '';
+  MatchDetail _detail = const MatchDetail();
   String? _summary, _error, _detailError;
   bool _loading = true, _busy = false;
   @override
@@ -48,9 +51,12 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
       _detailError = null;
     });
     try {
-      final report = await ref.read(repositoryProvider).detail(widget.match);
+      final detail = await ref.read(repositoryProvider).details(widget.match);
       if (mounted) {
-        setState(() => _report = readableReport(report));
+        setState(() {
+          _detail = detail;
+          _report = readableReport(detail.asText);
+        });
       }
     } catch (_) {
       if (mounted) {
@@ -203,7 +209,15 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
         ),
       ),
       const SizedBox(height: 24),
-      const Text('원문 리포트 & 기록', style: TextStyle(fontWeight: FontWeight.bold)),
+      if (!_loading &&
+          _detailError == null &&
+          _detail.teams.isNotEmpty &&
+          _detail.statKeys.isNotEmpty) ...[
+        const SizedBox(height: 24),
+        TeamStatisticsTable(detail: _detail),
+      ],
+      const SizedBox(height: 24),
+      const Text('원문 리포트', style: TextStyle(fontWeight: FontWeight.bold)),
       const SizedBox(height: 8),
       if (_loading)
         const LinearProgressIndicator()
@@ -212,7 +226,9 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
         TextButton(onPressed: _load, child: const Text('리포트 다시 시도')),
       ] else
         SelectableText(
-          _report.isEmpty ? '제공된 원문 리포트가 없습니다. 확인된 경기 기록만 표시합니다.' : _report,
+          _detail.article.isEmpty
+              ? '제공된 원문 리포트가 없습니다. 확인된 경기 기록만 표시합니다.'
+              : _detail.article,
         ),
     ],
   );
