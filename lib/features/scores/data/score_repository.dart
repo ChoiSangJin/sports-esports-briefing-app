@@ -80,7 +80,11 @@ class ScoreRepository {
         : DateTime(day.year, day.month, day.day + 1);
     if (league == League.f1) {
       try {
-        for (var year = start.year; year <= start.year + 1; year++) {
+        for (
+          var year = (day.isBefore(today) ? today : day).year;
+          year <= (day.isBefore(today) ? today : day).year + 1;
+          year++
+        ) {
           final response = await dio.get<Json>(
             'https://api.jolpi.ca/ergast/f1/$year.json',
             queryParameters: {'limit': 100},
