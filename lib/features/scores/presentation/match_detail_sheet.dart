@@ -1,3 +1,4 @@
+import 'compact_table.dart';
 import '../../../models/match_detail.dart';
 import 'team_statistics_table.dart';
 import 'package:flutter/material.dart';
@@ -117,39 +118,17 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
           child: Text(line, style: scoreStyle.copyWith(fontSize: 14)),
         ),
       if (widget.match.standings.isNotEmpty)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text('순위')),
-              DataColumn(label: Text('드라이버 / 팀')),
-              DataColumn(label: Text('시간 / 상태')),
-              DataColumn(label: Text('포인트')),
-            ],
-            rows: [
-              for (final row in widget.match.standings)
-                DataRow(
-                  cells: [
-                    DataCell(
-                      Text(
-                        row.position,
-                        style: scoreStyle.copyWith(fontSize: 14),
-                      ),
-                    ),
-                    DataCell(Text('${row.driver}\n${row.team}')),
-                    DataCell(
-                      Text(row.time, style: scoreStyle.copyWith(fontSize: 14)),
-                    ),
-                    DataCell(
-                      Text(
-                        row.points,
-                        style: scoreStyle.copyWith(fontSize: 14),
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+        CompactTable(
+          headers: const ['순위', '드라이버 / 팀', '시간 / 상태', '포인트'],
+          rows: [
+            for (final row in widget.match.standings)
+              [
+                row.position,
+                '${row.driver}\n${row.team}',
+                row.time,
+                row.points,
+              ],
+          ],
         ),
       const SizedBox(height: 20),
       Container(
@@ -227,9 +206,34 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
       ] else
         SelectableText(
           _detail.article.isEmpty
-              ? '제공된 원문 리포트가 없습니다. 확인된 경기 기록만 표시합니다.'
+              ? '제공처에 기사 본문이 없습니다. 경기 기록과 아래 관련 기사 또는 공식 출처를 확인하세요.'
               : _detail.article,
         ),
+      if (_detail.plays.isNotEmpty) ...[
+        const SizedBox(height: 20),
+        const Text(
+          '주요 경기 기록 · 제공처 기록',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        for (final play in _detail.plays)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text('• $play'),
+          ),
+      ],
+      if (_detail.news.isNotEmpty) ...[
+        const SizedBox(height: 20),
+        const Text('ESPN 관련 기사', style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('관련 뉴스이며 이 경기만의 리포트가 아닐 수 있습니다.'),
+        for (final article in _detail.news)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              MatchSourceLink(label: article.title, url: article.url),
+              if (article.description.isNotEmpty) Text(article.description),
+            ],
+          ),
+      ],
     ],
   );
 }
