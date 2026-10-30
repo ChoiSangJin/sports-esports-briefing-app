@@ -50,7 +50,7 @@ jobs:
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
           cd build/app/outputs/flutter-apk
           sha256sum app-arm64-v8a-release.apk > SHA256SUMS
-          gh release create "$RELEASE_TAG" app-arm64-v8a-release.apk SHA256SUMS --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Tactical Sports $RELEASE_TAG" --generate-notes
+          gh release create "$RELEASE_TAG" app-arm64-v8a-release.apk SHA256SUMS --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "스포츠 한눈에 $RELEASE_TAG" --generate-notes
       - name: Remove restored signing key
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"

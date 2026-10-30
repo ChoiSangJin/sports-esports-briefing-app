@@ -72,9 +72,12 @@ class MatchCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           Expanded(child: Text(row.driver)),
-                          Text(
-                            row.time,
-                            style: scoreStyle.copyWith(fontSize: 13),
+                          Flexible(
+                            child: Text(
+                              row.time,
+                              textAlign: TextAlign.end,
+                              style: scoreStyle.copyWith(fontSize: 13),
+                            ),
                           ),
                         ],
                       ),

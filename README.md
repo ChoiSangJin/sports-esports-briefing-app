@@ -13,7 +13,7 @@ flutter test --reporter expanded
 flutter run -d <android-device-id>
 ```
 
-이 클라우드 작업은 이미 격리돼 있습니다. 기존 `/workspace/sports-esports-briefing-app` 체크아웃을 사용하며 추가 worktree를 만들 필요가 없습니다. 실기기 없이도 어댑터·저장소·캐시·화면 테스트와 APK 빌드가 가능합니다. API 조회 진단은 `dart run scripts/api_smoke.dart`로 실행합니다. 이 명령은 제공처별 가용성을 출력하며 전체 통과를 뜻하는 테스트가 아닙니다.
+이 클라우드 작업은 이미 격리돼 있습니다. 기존 `/workspace/sports-esports-briefing-app` 체크아웃을 사용하며 추가 worktree를 만들 필요가 없습니다. 실기기 없이도 어댑터·저장소·캐시·화면 테스트와 APK 빌드가 가능합니다. 실제 API 점검은 `flutter test scripts/api_smoke.dart --reporter expanded`로 실행합니다. 6개 종목의 오늘 일정 상태를 출력하고 과거 경기의 실제 기록 표본을 검증합니다. 일반 CI에서는 외부 API를 호출하지 않으며, 전체 점검 범위와 한계는 [점검 기록](docs/app-audit.md)에 정리합니다.
 
 ## 기능
 

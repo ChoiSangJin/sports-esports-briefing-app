@@ -227,11 +227,39 @@ class ScoreRepository {
             for (final match in r) match.id: match,
         }.values.toList();
       } else if (league == League.f1) {
-        final r = await dio.get<Json>(
-          'https://api.jolpi.ca/ergast/f1/${day.year}/results.json',
-          queryParameters: {'limit': 2000},
+        // Jolpica clamps year-wide results to 100 driver entries, truncating
+        // later rounds. Resolve the selected race from the full calendar and
+        // request each round separately (at most the grid size).
+        final calendar = await dio.get<Json>(
+          'https://api.jolpi.ca/ergast/f1/${day.year}.json',
+          queryParameters: {'limit': 100},
         );
-        matches = JolpicaAdapter.parse(r.data!);
+        final races = JolpicaAdapter.schedule(
+          calendar.data!,
+        ).where((race) => sameDay(race.startsAt, day));
+        matches = [];
+        for (final race in races) {
+          if (race.startsAt.isAfter(_now())) {
+            matches.add(race);
+            continue;
+          }
+          final round = race.id.split(':').last;
+          final result = await dio.get<Json>(
+            'https://api.jolpi.ca/ergast/f1/${day.year}/$round/results.json',
+            queryParameters: {'limit': 100},
+          );
+          final completed = JolpicaAdapter.parse(result.data!);
+          if (completed.isEmpty) {
+            return LeagueResult(
+              league,
+              const [],
+              '선택한 F1 경기 결과가 아직 제공되지 않았습니다.',
+              'Jolpica F1',
+            );
+          }
+          matches.addAll(completed);
+        }
+        source = 'Jolpica F1';
       } else if (league == League.lol) {
         matches = await _lol.load();
         source = 'LoL e스포츠 공식 일정';
@@ -262,6 +290,7 @@ class ScoreRepository {
         source,
       );
     } catch (_) {
+      _espn.removeWhere((key, value) => key.startsWith('${league.name}:'));
       return LeagueResult(
         league,
         const [],

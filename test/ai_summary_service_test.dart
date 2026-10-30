@@ -130,4 +130,24 @@ void main() {
       expect(calls, 1);
     },
   );
+  test('pregame summaries are not reused as final game reports', () async {
+    keys.value = 'test-key';
+    var calls = 0;
+    final service = AiSummaryService(
+      preferences,
+      keys,
+      generate: (_, model, prompt) async => 'summary ${++calls}',
+    );
+    final upcoming = UnifiedMatchModel(
+      id: fixture.id,
+      league: fixture.league,
+      startsAt: fixture.startsAt,
+      title: fixture.title,
+      state: MatchState.scheduled,
+    );
+    await service.summarize(upcoming, 'preview only');
+    expect(service.cached(fixture), isNull);
+    expect(await service.summarize(fixture, 'final records'), 'summary 2');
+    expect(calls, 2);
+  });
 }

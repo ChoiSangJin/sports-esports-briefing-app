@@ -13,11 +13,16 @@ class SeasonService {
   final _cache = <String, ({DateTime expires, String? value})>{};
   final _pending = <String, Future<String?>>{};
 
+  int _generation = 0;
+
   void clearCache() {
+    _generation++;
     _cache.clear();
     _boundaries.clear();
     for (final key in preferences?.getKeys() ?? <String>{}) {
-      if (key.startsWith('season_notice_')) preferences?.remove(key);
+      if (key.startsWith('season_notice_')) {
+        preferences?.remove(key).catchError((_) => false);
+      }
     }
   }
 
@@ -38,9 +43,12 @@ class SeasonService {
     }
     final cached = _cache[path];
     if (cached != null && now.isBefore(cached.expires)) return cached.value;
-    return _pending.putIfAbsent(path, () async {
+    final generation = _generation;
+    final requestKey = '$path:$generation';
+    return _pending.putIfAbsent(requestKey, () async {
       try {
         final value = path == 'f1' ? await _f1(now) : await _load(path, now);
+        if (generation != _generation) return value;
         var expires = value == null
             ? now.add(const Duration(hours: 1))
             : DateTime(now.year, now.month, now.day + 1);
@@ -64,7 +72,7 @@ class SeasonService {
         // A failed metadata lookup must not hide normal match retrieval.
         return null;
       } finally {
-        _pending.remove(path);
+        _pending.remove(requestKey);
       }
     });
   }
