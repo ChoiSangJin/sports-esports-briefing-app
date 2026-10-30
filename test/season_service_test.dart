@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
+import 'support/http_fixture.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sports_esports_briefing/features/scores/data/season_service.dart';
@@ -231,6 +233,37 @@ void main() {
         await SeasonService(dio).notice('baseball/mlb', DateTime(2026, 11, 5)),
         contains('시즌 일정 종료'),
       );
+    },
+  );
+  test(
+    'refresh during an in-flight season request cannot restore stale cache',
+    () async {
+      final first = Completer<Map<String, Object>>();
+      var requests = 0;
+      final dio = Dio()
+        ..httpClientAdapter = HttpFixture((_) async {
+          requests++;
+          return jsonResponse(
+            requests == 1
+                ? await first.future
+                : season(2026, '2026-02-19', '2026-11-12'),
+          );
+        });
+      final service = SeasonService(dio);
+      final stale = service.notice('basketball/nba', DateTime(2026, 10, 30));
+      await Future<void>.delayed(Duration.zero);
+      service.clearCache();
+      expect(
+        await service.notice('basketball/nba', DateTime(2026, 10, 30)),
+        isNull,
+      );
+      first.complete(season(2027, '2027-02-19', '2027-11-12'));
+      await stale;
+      expect(
+        await service.notice('basketball/nba', DateTime(2026, 10, 30)),
+        isNull,
+      );
+      expect(requests, 2);
     },
   );
 }

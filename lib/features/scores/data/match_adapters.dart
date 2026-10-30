@@ -13,12 +13,20 @@ class EspnAdapter {
     final status = (e['status'] ?? competition['status']) as Json;
     final type = status['type'] as Json;
     final competitors = competition['competitors'] as List;
+    final cancelled = [
+      'STATUS_CANCELED',
+      'STATUS_CANCELLED',
+      'STATUS_POSTPONED',
+      'STATUS_SUSPENDED',
+    ].contains(type['name']);
     return UnifiedMatchModel(
       id: 'espn:${league.name}:${e['id']}',
       league: league,
       startsAt: DateTime.parse(e['date'] as String),
       title: (e['name'] ?? e['shortName'] ?? league.label).toString(),
-      state: type['completed'] == true
+      state: cancelled
+          ? MatchState.cancelled
+          : type['completed'] == true
           ? MatchState.finalScore
           : type['state'] == 'in'
           ? MatchState.live
@@ -28,9 +36,11 @@ class EspnAdapter {
         for (final c in competitors)
           Participant(
             name: (c['team']['displayName'] ?? c['team']['name']).toString(),
-            score: type['state'] == 'pre' ? null : c['score']?.toString(),
+            score: cancelled || type['state'] == 'pre'
+                ? null
+                : c['score']?.toString(),
             logo: c['team']['logo'] as String?,
-            winner: c['winner'] == true,
+            winner: !cancelled && c['winner'] == true,
           ),
       ],
       lines: [

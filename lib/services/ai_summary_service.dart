@@ -53,13 +53,15 @@ class AiSummaryService {
     await preferences.setString('ai_model', value);
   }
 
-  String _cacheKey(UnifiedMatchModel m) => 'summary:v1:${m.id}:$model';
+  String _cacheKey(UnifiedMatchModel m) =>
+      'summary:v2:${m.id}:${m.state.name}:$model';
 
   String? cached(UnifiedMatchModel match) {
     final raw = preferences.getString(_cacheKey(match));
     if (raw == null) return null;
     try {
       final data = jsonDecode(raw) as Map<String, dynamic>;
+      if (data['state'] != match.state.name) return null;
       // Final reports remain available offline; evolving live games expire.
       if (match.state != MatchState.finalScore &&
           DateTime.now()
@@ -141,6 +143,7 @@ $clipped
       jsonEncode({
         'text': text,
         'savedAt': DateTime.now().toUtc().toIso8601String(),
+        'state': match.state.name,
       }),
     );
     return text;
