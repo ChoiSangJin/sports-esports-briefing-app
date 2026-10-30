@@ -40,7 +40,8 @@ class ScoreRepository {
   final LolScheduleService _lol;
   final _espn = <String, Future<List<UnifiedMatchModel>>>{};
   DateTime _cachedAt = DateTime.now();
-  void clearCache() {
+  void clearCache({bool includeSeasons = true}) {
+    if (includeSeasons) _seasons.clearCache();
     _lol.clearCache();
     _espn.clear();
     _cachedAt = DateTime.now();
@@ -53,7 +54,9 @@ class ScoreRepository {
   };
 
   Future<LeagueResult> load(League league, DateTime day) async {
-    if (DateTime.now().difference(_cachedAt).inSeconds >= 60) clearCache();
+    if (DateTime.now().difference(_cachedAt).inSeconds >= 60) {
+      clearCache(includeSeasons: false);
+    }
     final now = _now();
     final today = DateTime(now.year, now.month, now.day);
     // Historical dates keep their records; current/future empty days may show
