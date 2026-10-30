@@ -297,6 +297,14 @@ class SeasonService {
     return winner == null || winner.isEmpty ? null : winner;
   }
 
+  static bool _isLocalDay(String raw, DateTime now) {
+    final date = DateTime.tryParse(raw)?.toLocal();
+    return date != null &&
+        date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
   Future<String?> _epl(Json season, DateTime now, Json current) async {
     var year = int.tryParse('${season['year']}');
     if (year == null) return null;
@@ -306,7 +314,8 @@ class SeasonService {
         (current['events'] as List? ?? []).any(
           (e) =>
               '${e['season']?['year']}' == '$year' &&
-              ['in', 'post'].contains(e['status']?['type']?['state']),
+              (['in', 'post'].contains(e['status']?['type']?['state']) ||
+                  _isLocalDay('${e['date']}', now)),
         )) {
       return null;
     }

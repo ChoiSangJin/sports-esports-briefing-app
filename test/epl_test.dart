@@ -218,4 +218,35 @@ void main() {
       );
     },
   );
+  test(
+    'EPL opening-day scheduled fixture is not hidden by previous season notice',
+    () async {
+      final dio = Dio()
+        ..httpClientAdapter = FixtureAdapter((r) {
+          expect(r.uri.path.endsWith('/scoreboard'), isTrue);
+          return {
+            'leagues': [
+              {
+                'season': {'year': 2026},
+              },
+            ],
+            'events': [
+              {
+                'season': {'year': 2026},
+                'date': '2026-08-20T20:00:00Z',
+                'status': {
+                  'type': {'state': 'pre'},
+                },
+              },
+            ],
+          };
+        });
+      expect(
+        await SeasonService(
+          dio,
+        ).notice('soccer/eng.1', DateTime(2026, 8, 20, 8)),
+        isNull,
+      );
+    },
+  );
 }
