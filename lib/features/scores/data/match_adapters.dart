@@ -19,6 +19,13 @@ class EspnAdapter {
       'STATUS_POSTPONED',
       'STATUS_SUSPENDED',
     ].contains(type['name']);
+    final draw =
+        league == League.epl &&
+        type['completed'] == true &&
+        !cancelled &&
+        competitors.length == 2 &&
+        competitors.first['score'] != null &&
+        competitors.first['score'] == competitors.last['score'];
     return UnifiedMatchModel(
       id: 'espn:${league.name}:${e['id']}',
       league: league,
@@ -31,7 +38,8 @@ class EspnAdapter {
           : type['state'] == 'in'
           ? MatchState.live
           : MatchState.scheduled,
-      status: (type['detail'] ?? type['description'] ?? '').toString(),
+      status:
+          '${type['detail'] ?? type['description'] ?? ''}${draw ? ' · 무승부' : ''}',
       participants: [
         for (final c in competitors)
           Participant(
@@ -40,9 +48,10 @@ class EspnAdapter {
                 ? null
                 : c['score']?.toString(),
             logo: c['team']['logo'] as String?,
-            winner: !cancelled && c['winner'] == true,
+            winner: !cancelled && !draw && c['winner'] == true,
           ),
       ],
+      source: 'ESPN ${league.label}',
       lines: [
         for (final c in competitors)
           if ((c['linescores'] as List? ?? []).isNotEmpty)

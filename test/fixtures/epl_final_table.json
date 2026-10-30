@@ -1,0 +1,337 @@
+{
+  "season": {
+    "year": 2025,
+    "startDate": "2025-06-01T04:00Z",
+    "endDate": "2026-06-01T03:59Z",
+    "displayName": "2025-26 English Premier League"
+  },
+  "children": [
+    {
+      "standings": {
+        "season": 2025,
+        "entries": [
+          {
+            "team": {
+              "id": "359",
+              "displayName": "Arsenal"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "382",
+              "displayName": "Manchester City"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 2.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "360",
+              "displayName": "Manchester United"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 3.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "362",
+              "displayName": "Aston Villa"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 4.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "364",
+              "displayName": "Liverpool"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 5.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "349",
+              "displayName": "AFC Bournemouth"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 6.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "366",
+              "displayName": "Sunderland"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 7.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "331",
+              "displayName": "Brighton & Hove Albion"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 8.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "337",
+              "displayName": "Brentford"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 9.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "363",
+              "displayName": "Chelsea"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 10.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "370",
+              "displayName": "Fulham"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 11.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "361",
+              "displayName": "Newcastle United"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 12.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "368",
+              "displayName": "Everton"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 13.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "357",
+              "displayName": "Leeds United"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 14.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "384",
+              "displayName": "Crystal Palace"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 15.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "393",
+              "displayName": "Nottingham Forest"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 16.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "367",
+              "displayName": "Tottenham Hotspur"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 17.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "371",
+              "displayName": "West Ham United"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 18.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "379",
+              "displayName": "Burnley"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 19.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "380",
+              "displayName": "Wolverhampton Wanderers"
+            },
+            "stats": [
+              {
+                "name": "gamesPlayed",
+                "value": 38.0
+              },
+              {
+                "name": "rank",
+                "value": 20.0
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

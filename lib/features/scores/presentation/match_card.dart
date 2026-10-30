@@ -106,7 +106,10 @@ class MatchCard extends StatelessWidget {
                                 fontSize: 17,
                                 color:
                                     match.state == MatchState.finalScore &&
-                                        !p.winner
+                                        !p.winner &&
+                                        match.participants.any(
+                                          (team) => team.winner,
+                                        )
                                     ? TacticalColors.muted
                                     : Colors.white,
                                 fontWeight: p.winner
@@ -121,7 +124,10 @@ class MatchCard extends StatelessWidget {
                             style: scoreStyle.copyWith(
                               color:
                                   match.state == MatchState.finalScore &&
-                                      !p.winner
+                                      !p.winner &&
+                                      match.participants.any(
+                                        (team) => team.winner,
+                                      )
                                   ? TacticalColors.muted
                                   : Colors.white,
                             ),

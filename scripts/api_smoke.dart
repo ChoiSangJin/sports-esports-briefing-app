@@ -13,7 +13,7 @@ import 'package:sports_esports_briefing/models/unified_match_model.dart';
 
 void main() {
   test(
-    'all six live schedule and detail providers',
+    'all supported live schedule and detail providers',
     () async {
       HttpOverrides.global = null;
       final dio = Dio(
@@ -48,9 +48,17 @@ void main() {
             '${r.league.label}: ${r.matches.length} matches; season=${r.seasonNotice != null}; warning=${r.warning ?? "none"}',
           );
         }
-        for (final league in [League.mlb, League.nba, League.nfl, League.kbo]) {
+        for (final league in [
+          League.mlb,
+          League.nba,
+          League.nfl,
+          League.kbo,
+          League.epl,
+        ]) {
           final day = league == League.kbo
               ? DateTime(2026, 10, 26)
+              : league == League.epl
+              ? DateTime(2026, 10, 24)
               : DateTime(2026, 10, 27);
           final result = await repository.load(league, day);
           expect(
