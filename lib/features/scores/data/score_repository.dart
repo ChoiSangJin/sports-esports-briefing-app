@@ -51,6 +51,7 @@ class ScoreRepository {
     League.nfl: 'football/nfl',
     League.nba: 'basketball/nba',
     League.mlb: 'baseball/mlb',
+    League.epl: 'soccer/eng.1',
   };
 
   Future<LeagueResult> load(League league, DateTime day) async {
@@ -236,6 +237,58 @@ class ScoreRepository {
           const [],
           'KBO 다음 경기일 조회에 실패했습니다. 다시 시도하거나 공식 일정에서 확인해 주세요.',
           selected.source,
+        );
+      }
+    }
+    if (league == League.epl) {
+      try {
+        for (var offset = 0; offset < 3; offset++) {
+          final month = DateTime(start.year, start.month + offset);
+          final response = await dio.get<Json>(
+            'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
+            queryParameters: {
+              'dates': '${month.year}${month.month.toString().padLeft(2, '0')}',
+              'limit': 100,
+            },
+          );
+          final next =
+              EspnAdapter.parse(response.data!, league)
+                  .where(
+                    (m) =>
+                        m.state == MatchState.scheduled &&
+                        m.startsAt.isAfter(now) &&
+                        !m.startsAt.toLocal().isBefore(start),
+                  )
+                  .toList()
+                ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+          if (next.isNotEmpty) {
+            return LeagueResult(
+              league,
+              next
+                  .where(
+                    (m) => sameDay(m.startsAt, next.first.startsAt.toLocal()),
+                  )
+                  .toList(),
+              null,
+              'ESPN EPL',
+              true,
+            );
+          }
+        }
+        return LeagueResult(
+          league,
+          const [],
+          null,
+          'ESPN EPL',
+          false,
+          'EPL 공개 일정 안내\n현재부터 3개월 범위에서 다음 경기가 확인되지 않았습니다. 공식 일정이 발표되면 표시됩니다.',
+        );
+      } catch (_) {
+        return LeagueResult(
+          league,
+          const [],
+          'EPL 다음 일정 조회에 실패했습니다. 다시 시도해 주세요.',
+          'ESPN EPL',
         );
       }
     }

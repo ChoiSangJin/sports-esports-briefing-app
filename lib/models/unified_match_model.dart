@@ -1,4 +1,4 @@
-enum League { lol, f1, mlb, nba, nfl, kbo }
+enum League { lol, f1, mlb, nba, nfl, kbo, epl }
 
 extension LeagueLabel on League {
   String get label => switch (this) {
@@ -8,6 +8,7 @@ extension LeagueLabel on League {
     League.nba => 'NBA',
     League.nfl => 'NFL',
     League.kbo => 'KBO',
+    League.epl => 'EPL',
   };
 }
 

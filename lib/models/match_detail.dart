@@ -67,9 +67,16 @@ class MatchDetail {
             ),
       ],
       plays: [
-        for (final play in data['plays'] as List? ?? [])
+        for (final play
+            in ((data['plays'] as List? ?? []).isNotEmpty
+                        ? data['plays']
+                        : data['keyEvents'])
+                    as List? ??
+                [])
           if (play['scoringPlay'] == true && play['text'] is String)
-            readableReport(play['text'] as String),
+            readableReport(
+              '${play['clock']?['displayValue'] != null && data['keyEvents'] != null ? '${play['clock']['displayValue']} · ' : ''}${play['text']}',
+            ),
       ].take(12).toList(),
       teams: [
         for (final row in data['boxscore']?['teams'] as List? ?? [])

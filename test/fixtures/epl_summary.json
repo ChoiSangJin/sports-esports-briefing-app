@@ -1,0 +1,330 @@
+{
+  "boxscore": {
+    "teams": [
+      {
+        "team": {
+          "displayName": "Aston Villa"
+        },
+        "statistics": [
+          {
+            "name": "foulsCommitted",
+            "displayValue": "21",
+            "label": "Fouls"
+          },
+          {
+            "name": "yellowCards",
+            "displayValue": "4",
+            "label": "Yellow Cards"
+          },
+          {
+            "name": "redCards",
+            "displayValue": "0",
+            "label": "Red Cards"
+          },
+          {
+            "name": "offsides",
+            "displayValue": "1",
+            "label": "Offsides"
+          },
+          {
+            "name": "wonCorners",
+            "displayValue": "4",
+            "label": "Corner Kicks"
+          },
+          {
+            "name": "saves",
+            "displayValue": "6",
+            "label": "Saves"
+          },
+          {
+            "name": "possessionPct",
+            "displayValue": "36.8",
+            "label": "Possession"
+          },
+          {
+            "name": "totalShots",
+            "displayValue": "8",
+            "label": "SHOTS"
+          },
+          {
+            "name": "shotsOnTarget",
+            "displayValue": "2",
+            "label": "ON GOAL"
+          },
+          {
+            "name": "shotPct",
+            "displayValue": "0.3",
+            "label": "On Target %"
+          },
+          {
+            "name": "penaltyKickGoals",
+            "displayValue": "0",
+            "label": "Penalty Goals"
+          },
+          {
+            "name": "penaltyKickShots",
+            "displayValue": "0",
+            "label": "Penalty Kicks Taken"
+          },
+          {
+            "name": "accuratePasses",
+            "displayValue": "254",
+            "label": "Accurate Passes"
+          },
+          {
+            "name": "totalPasses",
+            "displayValue": "314",
+            "label": "Passes"
+          },
+          {
+            "name": "passPct",
+            "displayValue": "0.8",
+            "label": "Pass Completion %"
+          },
+          {
+            "name": "accurateCrosses",
+            "displayValue": "0",
+            "label": "Accurate Crosses"
+          },
+          {
+            "name": "totalCrosses",
+            "displayValue": "5",
+            "label": "Crosses"
+          },
+          {
+            "name": "crossPct",
+            "displayValue": "0.0",
+            "label": "Cross %"
+          },
+          {
+            "name": "totalLongBalls",
+            "displayValue": "53",
+            "label": "Long Balls"
+          },
+          {
+            "name": "accurateLongBalls",
+            "displayValue": "19",
+            "label": "Accurate Long Balls"
+          },
+          {
+            "name": "longballPct",
+            "displayValue": "0.4",
+            "label": "Long Balls %"
+          },
+          {
+            "name": "blockedShots",
+            "displayValue": "3",
+            "label": "Blocked Shots"
+          },
+          {
+            "name": "effectiveTackles",
+            "displayValue": "13",
+            "label": "Effective Tackles"
+          },
+          {
+            "name": "totalTackles",
+            "displayValue": "31",
+            "label": "Tackles"
+          },
+          {
+            "name": "tacklePct",
+            "displayValue": "0.4",
+            "label": "Tackle %"
+          },
+          {
+            "name": "interceptions",
+            "displayValue": "10",
+            "label": "Interceptions"
+          },
+          {
+            "name": "effectiveClearance",
+            "displayValue": "22",
+            "label": "Effective Clearances"
+          },
+          {
+            "name": "totalClearance",
+            "displayValue": "22",
+            "label": "Clearances"
+          }
+        ]
+      },
+      {
+        "team": {
+          "displayName": "Manchester City"
+        },
+        "statistics": [
+          {
+            "name": "foulsCommitted",
+            "displayValue": "17",
+            "label": "Fouls"
+          },
+          {
+            "name": "yellowCards",
+            "displayValue": "4",
+            "label": "Yellow Cards"
+          },
+          {
+            "name": "redCards",
+            "displayValue": "0",
+            "label": "Red Cards"
+          },
+          {
+            "name": "offsides",
+            "displayValue": "2",
+            "label": "Offsides"
+          },
+          {
+            "name": "wonCorners",
+            "displayValue": "7",
+            "label": "Corner Kicks"
+          },
+          {
+            "name": "saves",
+            "displayValue": "0",
+            "label": "Saves"
+          },
+          {
+            "name": "possessionPct",
+            "displayValue": "63.2",
+            "label": "Possession"
+          },
+          {
+            "name": "totalShots",
+            "displayValue": "15",
+            "label": "SHOTS"
+          },
+          {
+            "name": "shotsOnTarget",
+            "displayValue": "7",
+            "label": "ON GOAL"
+          },
+          {
+            "name": "shotPct",
+            "displayValue": "0.5",
+            "label": "On Target %"
+          },
+          {
+            "name": "penaltyKickGoals",
+            "displayValue": "0",
+            "label": "Penalty Goals"
+          },
+          {
+            "name": "penaltyKickShots",
+            "displayValue": "0",
+            "label": "Penalty Kicks Taken"
+          },
+          {
+            "name": "accuratePasses",
+            "displayValue": "472",
+            "label": "Accurate Passes"
+          },
+          {
+            "name": "totalPasses",
+            "displayValue": "528",
+            "label": "Passes"
+          },
+          {
+            "name": "passPct",
+            "displayValue": "0.9",
+            "label": "Pass Completion %"
+          },
+          {
+            "name": "accurateCrosses",
+            "displayValue": "9",
+            "label": "Accurate Crosses"
+          },
+          {
+            "name": "totalCrosses",
+            "displayValue": "22",
+            "label": "Crosses"
+          },
+          {
+            "name": "crossPct",
+            "displayValue": "0.4",
+            "label": "Cross %"
+          },
+          {
+            "name": "totalLongBalls",
+            "displayValue": "32",
+            "label": "Long Balls"
+          },
+          {
+            "name": "accurateLongBalls",
+            "displayValue": "17",
+            "label": "Accurate Long Balls"
+          },
+          {
+            "name": "longballPct",
+            "displayValue": "0.5",
+            "label": "Long Balls %"
+          },
+          {
+            "name": "blockedShots",
+            "displayValue": "4",
+            "label": "Blocked Shots"
+          },
+          {
+            "name": "effectiveTackles",
+            "displayValue": "10",
+            "label": "Effective Tackles"
+          },
+          {
+            "name": "totalTackles",
+            "displayValue": "13",
+            "label": "Tackles"
+          },
+          {
+            "name": "tacklePct",
+            "displayValue": "0.8",
+            "label": "Tackle %"
+          },
+          {
+            "name": "interceptions",
+            "displayValue": "8",
+            "label": "Interceptions"
+          },
+          {
+            "name": "effectiveClearance",
+            "displayValue": "16",
+            "label": "Effective Clearances"
+          },
+          {
+            "name": "totalClearance",
+            "displayValue": "16",
+            "label": "Clearances"
+          }
+        ]
+      }
+    ]
+  },
+  "article": {
+    "headline": "Man City beaten by double from Aston Villa's Jackson",
+    "story": "<p>MANCHESTER, England -- <a data-clubhouse-guid=\"94fd5d7e-35b1-9d52-c9f2-4a37259bea36\" href=\"http://espn.com/soccer/team?id=382\">Manchester City</a>'s perfect start to the <a data-league-guid=\"6949f3af-300c-35f1-beab-b95669eedd38\" href=\"https://www.espn.com/soccer/league/_/name/ENG.1\">Premier League</a> season ended Saturday with a 2-1 loss at <a data-clubhouse-guid=\"610557ff-e870-ea0e-a3b2-8244df325d22\" href=\"http://espn.com/soccer/team?id=362\">Aston Villa</a>.</p>\n<p><a data-player-guid=\"ed90b32c-f09c-302e-af63-852a1e2a9352\" href=\"http://espn.com/soccer/player/_/id/308524/nicolas-jackson\">Nicolas Jackson</a> scored both goals for Villa against Enzo Maresca's City, who were aiming for an eighth straight win in the league.</p>\n<p>It also extended Villa's outstanding recent run to six wins from seven games in all competitions.</p>\n<p>Jackson is up to seven goals for the season in all competitions. He fired the opener inside six minutes at Villa Park.</p>\n<p><a data-player-guid=\"63b48f6c-a73d-78e7-71b9-21edae6b0e31\" href=\"http://espn.com/soccer/player/_/id/253989/erling-haaland\">Erling Haaland</a> headed City level in the second half, but Jackson got his second and the winner with a first-time finish that squirmed under goalkeeper <a data-player-guid=\"bafc75bd-f245-c2e3-c93b-ccf9907022bf\" href=\"http://espn.com/soccer/player/_/id/217092/gianluigi-donnarumma\">Gianluigi Donnarumma</a>.</p>\n<p>City fell to a fourth defeat at Villa Park in as many seasons.</p>\n\n"
+  },
+  "keyEvents": [
+    {
+      "text": "Goal! Aston Villa 1, Manchester City 0. Nicolas Jackson (Aston Villa) right footed shot from the left side of the box to the top left corner. Assisted by John McGinn.",
+      "scoringPlay": true,
+      "clock": {
+        "value": 354.0,
+        "displayValue": "6'"
+      }
+    },
+    {
+      "text": "Goal! Aston Villa 1, Manchester City 1. Erling Haaland (Manchester City) header from very close range to the bottom left corner. Assisted by Iliman Ndiaye with a cross following a set piece situation.",
+      "scoringPlay": true,
+      "clock": {
+        "value": 3117.0,
+        "displayValue": "52'"
+      }
+    },
+    {
+      "text": "Goal! Aston Villa 2, Manchester City 1. Nicolas Jackson (Aston Villa) right footed shot from the centre of the box to the centre of the goal. Assisted by Ibrahim Mbaye.",
+      "scoringPlay": true,
+      "clock": {
+        "value": 3591.0,
+        "displayValue": "60'"
+      }
+    }
+  ]
+}

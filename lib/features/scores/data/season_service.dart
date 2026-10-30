@@ -209,6 +209,7 @@ class SeasonService {
     final scoreboard = await _scoreboard(path);
     final season = _seasonFrom(scoreboard);
     if (season == null) return null;
+    if (path == 'soccer/eng.1') return _epl(season, now, scoreboard);
     final year = int.tryParse('${season['year']}');
     final end = DateTime.tryParse('${season['endDate']}');
     final start = DateTime.tryParse('${season['startDate']}');
@@ -264,6 +265,116 @@ class SeasonService {
       text += '\n\n다음 시즌 일정 조회에 실패했습니다. 나중에 다시 확인해 주세요.';
     }
     return '$text\n\n지난 경기 결과는 이전 날짜를 선택해 확인하세요.';
+  }
+
+  /// EPL has no championship final. A title clinch does not end its season:
+  /// all 20 clubs must have completed their 38 league fixtures.
+  static String? eplChampion(Json table, int year) {
+    if ('${table['season']?['year']}' != '$year') return null;
+    final entries = <dynamic>[];
+    for (final group in table['children'] as List? ?? []) {
+      final standings = group['standings'];
+      if ('${standings?['season']}' == '$year') {
+        entries.addAll(standings?['entries'] as List? ?? []);
+      }
+    }
+    if (entries.length != 20 ||
+        entries.map((e) => '${e['team']?['id']}').toSet().length != 20) {
+      return null;
+    }
+    String? winner;
+    for (final entry in entries) {
+      final stats = {
+        for (final stat in entry['stats'] as List? ?? [])
+          '${stat['name']}': stat['value'],
+      };
+      if (stats['gamesPlayed'] != 38) return null;
+      if (stats['rank'] == 1) {
+        if (winner != null) return null;
+        winner = entry['team']?['displayName']?.toString();
+      }
+    }
+    return winner == null || winner.isEmpty ? null : winner;
+  }
+
+  Future<String?> _epl(Json season, DateTime now, Json current) async {
+    var year = int.tryParse('${season['year']}');
+    if (year == null) return null;
+    final summer = now.year == year && now.month >= 6 && now.month <= 8;
+    if (now.isBefore(DateTime(year + 1, 4)) && !summer) return null;
+    if (summer &&
+        (current['events'] as List? ?? []).any(
+          (e) =>
+              '${e['season']?['year']}' == '$year' &&
+              ['in', 'post'].contains(e['status']?['type']?['state']),
+        )) {
+      return null;
+    }
+    Json table = {};
+    try {
+      final response = await dio.get<Json>(
+        'https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings',
+        queryParameters: {'season': year},
+      );
+      table = response.data ?? {};
+    } catch (_) {
+      if (!summer) rethrow;
+    }
+    var champion = now.isBefore(DateTime(year + 1, 4))
+        ? null
+        : eplChampion(table, year);
+    if (champion == null && summer) {
+      final entries = [
+        for (final group in table['children'] as List? ?? [])
+          ...(group['standings']?['entries'] as List? ?? []),
+      ];
+      final noGames =
+          entries.length == 20 &&
+          entries.every(
+            (e) => (e['stats'] as List? ?? []).any(
+              (s) => s['name'] == 'gamesPlayed' && s['value'] == 0,
+            ),
+          );
+      if ('${table['season']?['year']}' != '$year' || noGames) {
+        final previous = await dio.get<Json>(
+          'https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings',
+          queryParameters: {'season': year - 1},
+        );
+        champion = eplChampion(previous.data ?? {}, year - 1);
+        if (champion != null) year--;
+      }
+    }
+    if (champion == null) return null;
+    var next = '다음 시즌 개막 일정은 아직 확인되지 않았습니다.';
+    try {
+      for (final month in [8, 9]) {
+        final calendar = await _scoreboard(
+          'soccer/eng.1',
+          dates: '${year + 1}${month.toString().padLeft(2, '0')}',
+          limit: 100,
+        );
+        final dates = <DateTime>[];
+        for (final event in calendar['events'] as List? ?? []) {
+          final date = DateTime.tryParse('${event['date']}');
+          if ('${event['season']?['year']}' == '${year + 1}' &&
+              event['status']?['type']?['state'] == 'pre' &&
+              date != null &&
+              date.isAfter(now)) {
+            dates.add(date);
+          }
+        }
+        dates.sort();
+        if (dates.isNotEmpty) {
+          _boundaries['soccer/eng.1'] = dates.first;
+          next =
+              '다음 시즌 첫 공개 경기: ${_date(dates.first)} · ${_days(dates.first, now)}일 남음';
+          break;
+        }
+      }
+    } catch (_) {
+      next = '다음 시즌 일정 조회에 실패했습니다. 나중에 다시 확인해 주세요.';
+    }
+    return 'EPL $year/${year + 1} 시즌 종료\n우승: $champion\nESPN 순위표에서 20개 팀의 38경기 완료를 확인했습니다.\n\n$next\n지난 경기 결과는 이전 날짜를 선택해 확인하세요.';
   }
 
   Future<String?> _f1(DateTime now) async {

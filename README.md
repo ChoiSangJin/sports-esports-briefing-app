@@ -2,6 +2,8 @@
 
 Android ARM64용 Flutter 스포츠·e스포츠 스코어보드. 백엔드와 로그인 없이 기기에서 데이터를 조회하고, 사용자가 등록한 Gemini 키로 한국어 브리핑을 생성합니다.
 
+지원 종목: MLB · NBA · NFL · KBO · EPL · F1 · LoL e스포츠
+
 ## 실행 및 검증
 
 Flutter **3.35.7** / Dart 3.9.2, JDK 21, Android SDK 36, NDK 27.0.12077973을 사용합니다. 최소 Android 7.0(API 24), ARM64 기기가 필요합니다.
@@ -13,7 +15,7 @@ flutter test --reporter expanded
 flutter run -d <android-device-id>
 ```
 
-이 클라우드 작업은 이미 격리돼 있습니다. 기존 `/workspace/sports-esports-briefing-app` 체크아웃을 사용하며 추가 worktree를 만들 필요가 없습니다. 실기기 없이도 어댑터·저장소·캐시·화면 테스트와 APK 빌드가 가능합니다. 실제 API 점검은 `flutter test scripts/api_smoke.dart --reporter expanded`로 실행합니다. 6개 종목의 오늘 일정 상태를 출력하고 과거 경기의 실제 기록 표본을 검증합니다. 일반 CI에서는 외부 API를 호출하지 않으며, 전체 점검 범위와 한계는 [점검 기록](docs/app-audit.md)에 정리합니다.
+이 클라우드 작업은 이미 격리돼 있습니다. 기존 `/workspace/sports-esports-briefing-app` 체크아웃을 사용하며 추가 worktree를 만들 필요가 없습니다. 실기기 없이도 어댑터·저장소·캐시·화면 테스트와 APK 빌드가 가능합니다. 실제 API 점검은 `flutter test scripts/api_smoke.dart --reporter expanded`로 실행합니다. 7개 종목의 오늘 일정 상태를 출력하고 과거 경기의 실제 기록 표본을 검증합니다. 일반 CI에서는 외부 API를 호출하지 않으며, 전체 점검 범위와 한계는 [점검 기록](docs/app-audit.md)에 정리합니다.
 
 ## 기능
 
