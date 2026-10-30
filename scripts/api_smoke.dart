@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sports_esports_briefing/features/scores/data/score_repository.dart';
 import 'package:sports_esports_briefing/features/scores/data/lol_schedule_service.dart';
 import 'package:sports_esports_briefing/features/scores/data/match_adapters.dart';
+import 'package:sports_esports_briefing/features/scores/data/season_service.dart';
+import 'package:sports_esports_briefing/features/scores/data/kbo_season_service.dart';
 import 'package:sports_esports_briefing/models/unified_match_model.dart';
 
 void main() {
@@ -96,6 +98,39 @@ void main() {
         expect(f1.matches.single.standings, isNotEmpty);
         stdout.writeln(
           'F1 latest completed: ${f1.matches.single.title}, drivers=${f1.matches.single.standings.length}',
+        );
+        final nbaFinals = await dio.get<Json>(
+          'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+          queryParameters: {'dates': '202606', 'limit': 100},
+        );
+        expect(
+          SeasonService.championshipWinner(
+            nbaFinals.data!,
+            2026,
+            DateTime(2026, 6, 15),
+            'basketball/nba',
+          ),
+          'New York Knicks',
+        );
+        final nflFinal = await dio.get<Json>(
+          'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+          queryParameters: {'dates': '202602', 'limit': 100},
+        );
+        expect(
+          SeasonService.championshipWinner(
+            nflFinal.data!,
+            2025,
+            DateTime(2026, 2, 10),
+            'football/nfl',
+          ),
+          'Seattle Seahawks',
+        );
+        expect(
+          await KboSeasonService(dio).notice(DateTime(2025, 11, 5)),
+          contains('한국시리즈 우승: LG'),
+        );
+        stdout.writeln(
+          'NBA/NFL/KBO historical championship clinches verified from live official/provider responses',
         );
       } finally {
         dio.close();

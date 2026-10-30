@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../../models/unified_match_model.dart';
+import 'kbo_season_service.dart';
 
 class KboService {
   KboService(this.dio);
@@ -55,6 +56,9 @@ class KboService {
     }
     return parseApi(data, date);
   }
+
+  Future<DateTime?> nextDate(DateTime day) =>
+      KboSeasonService(dio).nextDate(day);
 
   static String _date(DateTime d) =>
       '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';

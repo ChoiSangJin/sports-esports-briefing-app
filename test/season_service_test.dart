@@ -246,7 +246,7 @@ void main() {
           return jsonResponse(
             requests == 1
                 ? await first.future
-                : season(2026, '2026-02-19', '2026-11-12'),
+                : season(2027, '2026-10-01', '2027-07-12'),
           );
         });
       final service = SeasonService(dio);

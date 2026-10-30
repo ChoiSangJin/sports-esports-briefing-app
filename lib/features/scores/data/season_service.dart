@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'match_adapters.dart';
+import 'kbo_season_service.dart';
 
 /// Season boundaries include the postseason. Empty scoreboards are never proof
 /// that a season ended. Cache the metadata separately from live match data.
@@ -27,7 +28,7 @@ class SeasonService {
   }
 
   Future<String?> notice(String path, DateTime now) async {
-    final key = 'season_notice_v2:$path';
+    final key = 'season_notice_v3:$path';
     if (!_cache.containsKey(path)) {
       try {
         final stored = jsonDecode(preferences?.getString(key) ?? 'null');
@@ -47,7 +48,11 @@ class SeasonService {
     final requestKey = '$path:$generation';
     return _pending.putIfAbsent(requestKey, () async {
       try {
-        final value = path == 'f1' ? await _f1(now) : await _load(path, now);
+        final value = path == 'f1'
+            ? await _f1(now)
+            : path == 'kbo'
+            ? await KboSeasonService(dio).notice(now)
+            : await _load(path, now);
         if (generation != _generation) return value;
         var expires = value == null
             ? now.add(const Duration(hours: 1))
@@ -94,7 +99,15 @@ class SeasonService {
 
   /// A completed playoff series alone is not enough: it must be the World
   /// Series, final, in this season, with the winner's fourth series victory.
-  static String? worldSeriesChampion(Json scoreboard, int year, DateTime now) {
+  static String? worldSeriesChampion(Json scoreboard, int year, DateTime now) =>
+      championshipWinner(scoreboard, year, now, 'baseball/mlb');
+
+  static String? championshipWinner(
+    Json scoreboard,
+    int year,
+    DateTime now,
+    String path,
+  ) {
     for (final event in scoreboard['events'] as List? ?? []) {
       if ('${event['season']?['year']}' != '$year' ||
           '${event['season']?['type']}' != '3') {
@@ -110,10 +123,24 @@ class SeasonService {
         final notes = c['notes'] as List? ?? [];
         if (!notes.any(
           (n) => RegExp(
-            r'^World Series(?:\s*-\s*Game \d+)?$',
+            path == 'basketball/nba'
+                ? r'^NBA Finals(?:\s*-\s*Game \d+)?$'
+                : path == 'football/nfl'
+                ? r'^Super Bowl [IVXLCDM]+$'
+                : r'^World Series(?:\s*-\s*Game \d+)?$',
             caseSensitive: false,
           ).hasMatch('${n['headline']}'.trim()),
         )) {
+          continue;
+        }
+        if (path == 'football/nfl') {
+          final winners = (c['competitors'] as List? ?? [])
+              .where((t) => t['winner'] == true)
+              .toList();
+          if (winners.length == 1) {
+            final name = winners.single['team']?['displayName']?.toString();
+            if (name != null && name.isNotEmpty) return name;
+          }
           continue;
         }
         final series = c['series'];
@@ -145,20 +172,31 @@ class SeasonService {
     return null;
   }
 
-  Future<String?> _mlbChampion(Json current, int year, DateTime now) async {
-    final found = worldSeriesChampion(current, year, now);
+  Future<String?> _champion(
+    String path,
+    Json current,
+    int year,
+    DateTime now,
+  ) async {
+    final found = championshipWinner(current, year, now, path);
     if (found != null) return found;
     // ESPN accepts YYYYMM calendars; a date range is not supported by this
     // endpoint. At most two monthly requests cover the championship window.
-    for (final month in [10, 11]) {
-      if (DateTime(year, month).isAfter(now)) continue;
+    for (final month
+        in path == 'basketball/nba'
+            ? [6, 7]
+            : path == 'football/nfl'
+            ? [2]
+            : [10, 11]) {
+      final calendarYear = path == 'football/nfl' ? year + 1 : year;
+      if (DateTime(calendarYear, month).isAfter(now)) continue;
       try {
         final calendar = await _scoreboard(
-          'baseball/mlb',
-          dates: '$year$month',
+          path,
+          dates: '$calendarYear${month.toString().padLeft(2, '0')}',
           limit: 100,
         );
-        final champion = worldSeriesChampion(calendar, year, now);
+        final champion = championshipWinner(calendar, year, now, path);
         if (champion != null) return champion;
       } catch (_) {
         /* An unavailable calendar is not evidence of a champion. */
@@ -189,13 +227,21 @@ class SeasonService {
             .toLowerCase()
             .replaceAll(' ', '')
             .contains('offseason');
-    final champion = path == 'baseball/mlb' && !now.isAfter(end) && !offseason
-        ? await _mlbChampion(scoreboard, year, now)
+    final champion = !now.isAfter(end) && !offseason
+        ? await _champion(path, scoreboard, year, now)
         : null;
     if (!now.isAfter(end) && !offseason && champion == null) return null;
     var text = champion == null
         ? '$year 시즌 일정 종료\n정규시즌과 포스트시즌을 포함한 ESPN 시즌 달력 기준입니다.'
-        : 'MLB $year 시즌 종료\n월드시리즈 우승: $champion\nESPN의 경기 종료·시리즈 4승 확정 기록으로 확인했습니다.';
+        : '${path == 'baseball/mlb'
+              ? 'MLB'
+              : path == 'basketball/nba'
+              ? 'NBA'
+              : 'NFL'} $year 시즌 종료\n${path == 'baseball/mlb'
+              ? '월드시리즈'
+              : path == 'basketball/nba'
+              ? 'NBA 파이널'
+              : '슈퍼볼'} 우승: $champion\nESPN의 결승 종료·우승 확정 기록으로 확인했습니다.';
     try {
       final next = _seasonFrom(await _scoreboard(path, dates: '${year + 1}'));
       final nextStart = DateTime.tryParse('${next?['startDate']}');
@@ -230,30 +276,35 @@ class SeasonService {
           .cast<Map<String, dynamic>>();
     }
 
-    final calendar = await races('${now.year}');
+    var seasonYear = now.year;
+    var calendar = await races('$seasonYear');
+    if (calendar.isEmpty) {
+      seasonYear--;
+      calendar = await races('$seasonYear');
+    }
     if (calendar.isEmpty) return null;
     DateTime time(Map<String, dynamic> r) =>
         DateTime.parse("${r['date']}T${r['time'] ?? '00:00:00Z'}");
     calendar.sort((a, b) => time(a).compareTo(time(b)));
     if (now.isBefore(time(calendar.first))) {
       _boundaries['f1'] = time(calendar.first);
-      return 'F1 ${now.year} 시즌 개막 예정\n${calendar.first['raceName']} · ${_date(time(calendar.first))}\n${_days(time(calendar.first), now)}일 남음 · Jolpica 공개 달력 기준';
+      return 'F1 $seasonYear 시즌 개막 예정\n${calendar.first['raceName']} · ${_date(time(calendar.first))}\n${_days(time(calendar.first), now)}일 남음 · Jolpica 공개 달력 기준';
     }
     if (!now.isAfter(time(calendar.last))) return null;
     final finalRace = calendar.last;
-    final results = await races('${now.year}/${finalRace['round']}/results');
+    final results = await races('$seasonYear/${finalRace['round']}/results');
     if (results.isEmpty ||
-        results.first['season'] != '${now.year}' ||
+        results.first['season'] != '$seasonYear' ||
         results.first['round'] != finalRace['round'] ||
         (results.first['Results'] as List? ?? []).isEmpty) {
       return null;
     }
-    var text = 'F1 ${now.year} 시즌 종료\n공개 달력의 최종 라운드 결과가 확인되었습니다.';
+    var text = 'F1 $seasonYear 시즌 종료\n공개 달력의 최종 라운드 결과가 확인되었습니다.';
     try {
-      final next = await races('${now.year + 1}');
+      final next = await races('${seasonYear + 1}');
       next.sort((a, b) => time(a).compareTo(time(b)));
       if (next.isNotEmpty &&
-          next.first['season'] == '${now.year + 1}' &&
+          next.first['season'] == '${seasonYear + 1}' &&
           time(next.first).isAfter(now)) {
         _boundaries['f1'] = time(next.first);
         text +=
