@@ -1,11 +1,13 @@
 import '../../../models/match_detail.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/unified_match_model.dart';
 import 'match_adapters.dart';
 import 'kbo_service.dart';
 import 'lol_schedule_service.dart';
 import 'kbo_detail_service.dart';
 import 'lol_detail_service.dart';
+import 'season_service.dart';
 
 class LeagueResult {
   const LeagueResult(
@@ -14,16 +16,26 @@ class LeagueResult {
     this.warning,
     this.source = '',
     this.isUpcoming = false,
+    this.seasonNotice,
   ]);
   final League league;
   final List<UnifiedMatchModel> matches;
   final String? warning;
   final String source;
   final bool isUpcoming;
+  final String? seasonNotice;
 }
 
 class ScoreRepository {
-  ScoreRepository(this.dio) : _lol = LolScheduleService(dio);
+  ScoreRepository(
+    this.dio, {
+    DateTime Function()? clock,
+    SharedPreferences? preferences,
+  }) : _now = clock ?? DateTime.now,
+       _lol = LolScheduleService(dio),
+       _seasons = SeasonService(dio, preferences: preferences);
+  final DateTime Function() _now;
+  final SeasonService _seasons;
   final Dio dio;
   final LolScheduleService _lol;
   final _espn = <String, Future<List<UnifiedMatchModel>>>{};
@@ -42,12 +54,39 @@ class ScoreRepository {
 
   Future<LeagueResult> load(League league, DateTime day) async {
     if (DateTime.now().difference(_cachedAt).inSeconds >= 60) clearCache();
+    final now = _now();
+    final today = DateTime(now.year, now.month, now.day);
+    // Historical dates keep their records; current/future empty days may show
+    // a verified season boundary instead of scanning fourteen empty dates.
+    String? season;
+    if (!day.isBefore(today) &&
+        (paths.containsKey(league) || league == League.f1)) {
+      season = await _seasons.notice(paths[league] ?? 'f1', now);
+    }
+    if (season != null && sameDay(day, today)) {
+      return LeagueResult(
+        league,
+        const [],
+        null,
+        league == League.f1 ? 'Jolpica 시즌 일정' : 'ESPN 시즌 일정',
+        false,
+        season,
+      );
+    }
     final selected = await _loadDay(league, day);
     if (selected.matches.isNotEmpty || selected.warning != null) {
       return selected;
     }
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    if (season != null) {
+      return LeagueResult(
+        league,
+        const [],
+        null,
+        league == League.f1 ? 'Jolpica 시즌 일정' : 'ESPN 시즌 일정',
+        false,
+        season,
+      );
+    }
     if (league == League.lol) {
       final all = await _lol.load();
       final next =

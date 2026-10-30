@@ -33,7 +33,10 @@ final dioProvider = Provider((ref) {
   return dio;
 });
 final repositoryProvider = Provider(
-  (ref) => ScoreRepository(ref.watch(dioProvider)),
+  (ref) => ScoreRepository(
+    ref.watch(dioProvider),
+    preferences: ref.watch(preferencesProvider),
+  ),
 );
 final selectedDateProvider = StateProvider((ref) {
   final now = DateTime.now();

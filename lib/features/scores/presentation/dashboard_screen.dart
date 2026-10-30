@@ -227,6 +227,16 @@ class _LeagueSection extends ConsumerWidget {
           data: (data) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (data.seasonNotice != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      data.seasonNotice!,
+                      style: const TextStyle(height: 1.6),
+                    ),
+                  ),
+                ),
               if (data.isUpcoming)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 12),
@@ -269,7 +279,9 @@ class _LeagueSection extends ConsumerWidget {
                     ],
                   ),
                 ),
-              if (data.warning == null && data.matches.isEmpty)
+              if (data.warning == null &&
+                  data.seasonNotice == null &&
+                  data.matches.isEmpty)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 16),
                   child: Text(

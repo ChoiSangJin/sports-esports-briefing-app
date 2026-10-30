@@ -71,7 +71,7 @@ void main() {
       expect(result.warning, isNull);
       expect(result.matches.single.startsAt, next.toUtc());
       expect(result.matches.single.state, MatchState.scheduled);
-      expect(calls, lessThanOrEqualTo(5));
+      expect(calls, lessThanOrEqualTo(6));
     },
   );
 }
