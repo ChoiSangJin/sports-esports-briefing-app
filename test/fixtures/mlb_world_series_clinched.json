@@ -1,0 +1,232 @@
+{
+  "leagues": [
+    {
+      "season": {
+        "year": 2026,
+        "startDate": "2026-02-19T08:00Z",
+        "endDate": "2026-11-12T07:59Z",
+        "displayName": "2026",
+        "type": {
+          "id": "3",
+          "type": 3,
+          "name": "Postseason",
+          "abbreviation": "post"
+        }
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "401908046",
+      "date": "2026-10-29T00:00Z",
+      "season": {
+        "year": 2026,
+        "type": 3,
+        "slug": "post-season"
+      },
+      "status": {
+        "clock": 0.0,
+        "displayClock": "0:00",
+        "period": 9,
+        "type": {
+          "id": "3",
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "description": "Final",
+          "detail": "Final",
+          "shortDetail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "type": "event",
+              "headline": "World Series - Game 5"
+            }
+          ],
+          "series": {
+            "type": "playoff",
+            "title": "Playoff Series",
+            "summary": "MIL wins series 4-1",
+            "completed": true,
+            "totalCompetitions": 7,
+            "competitors": [
+              {
+                "id": "30",
+                "uid": "s:1~l:10~t:30",
+                "wins": 1,
+                "ties": 0,
+                "href": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/seasons/2026/teams/30?lang=en&region=us"
+              },
+              {
+                "id": "8",
+                "uid": "s:1~l:10~t:8",
+                "wins": 4,
+                "ties": 0,
+                "href": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/seasons/2026/teams/8?lang=en&region=us"
+              }
+            ]
+          },
+          "status": {
+            "clock": 0.0,
+            "displayClock": "0:00",
+            "period": 9,
+            "type": {
+              "id": "3",
+              "name": "STATUS_FINAL",
+              "state": "post",
+              "completed": true,
+              "description": "Final",
+              "detail": "Final",
+              "shortDetail": "Final"
+            },
+            "featuredAthletes": [
+              {
+                "name": "winningPitcher",
+                "displayName": "Winning Pitcher",
+                "shortDisplayName": "Win",
+                "abbreviation": "WP",
+                "playerId": 5080761,
+                "athlete": {
+                  "id": "5080761",
+                  "fullName": "Jacob Misiorowski",
+                  "displayName": "Jacob Misiorowski",
+                  "shortName": "J. Misiorowski",
+                  "links": [
+                    {
+                      "rel": [
+                        "playercard",
+                        "desktop",
+                        "athlete"
+                      ],
+                      "href": "https://www.espn.com/mlb/player/_/id/5080761"
+                    }
+                  ],
+                  "headshot": "https://a.espncdn.com/i/headshots/mlb/players/full/5080761.png",
+                  "jersey": "32",
+                  "position": "SP",
+                  "team": {
+                    "id": "8"
+                  }
+                },
+                "team": {
+                  "id": "8"
+                },
+                "statistics": [
+                  {
+                    "name": "saves",
+                    "abbreviation": "SV",
+                    "displayValue": "0"
+                  },
+                  {
+                    "name": "losses",
+                    "abbreviation": "L",
+                    "displayValue": "0"
+                  },
+                  {
+                    "name": "wins",
+                    "abbreviation": "W",
+                    "displayValue": "2"
+                  },
+                  {
+                    "name": "ERA",
+                    "abbreviation": "ERA",
+                    "displayValue": "1.89"
+                  },
+                  {
+                    "name": "errors",
+                    "abbreviation": "E",
+                    "displayValue": "0"
+                  }
+                ],
+                "projections": {
+                  "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908046/competitions/401908046/competitors/8/roster/5080761/projections?lang=en&region=us"
+                }
+              },
+              {
+                "name": "losingPitcher",
+                "displayName": "Losing Pitcher",
+                "shortDisplayName": "Loss",
+                "abbreviation": "LP",
+                "playerId": 42584,
+                "athlete": {
+                  "id": "42584",
+                  "fullName": "Drew Rasmussen",
+                  "displayName": "Drew Rasmussen",
+                  "shortName": "D. Rasmussen",
+                  "links": [
+                    {
+                      "rel": [
+                        "playercard",
+                        "desktop",
+                        "athlete"
+                      ],
+                      "href": "https://www.espn.com/mlb/player/_/id/42584"
+                    }
+                  ],
+                  "headshot": "https://a.espncdn.com/i/headshots/mlb/players/full/42584.png",
+                  "jersey": "57",
+                  "position": "SP",
+                  "team": {
+                    "id": "30"
+                  }
+                },
+                "team": {
+                  "id": "30"
+                },
+                "statistics": [
+                  {
+                    "name": "saves",
+                    "abbreviation": "SV",
+                    "displayValue": "0"
+                  },
+                  {
+                    "name": "losses",
+                    "abbreviation": "L",
+                    "displayValue": "1"
+                  },
+                  {
+                    "name": "wins",
+                    "abbreviation": "W",
+                    "displayValue": "2"
+                  },
+                  {
+                    "name": "ERA",
+                    "abbreviation": "ERA",
+                    "displayValue": "2.20"
+                  },
+                  {
+                    "name": "errors",
+                    "abbreviation": "E",
+                    "displayValue": "0"
+                  }
+                ],
+                "projections": {
+                  "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908046/competitions/401908046/competitors/30/roster/42584/projections?lang=en&region=us"
+                }
+              }
+            ]
+          },
+          "competitors": [
+            {
+              "id": "30",
+              "winner": false,
+              "team": {
+                "displayName": "Tampa Bay Rays"
+              }
+            },
+            {
+              "id": "8",
+              "winner": true,
+              "team": {
+                "displayName": "Milwaukee Brewers"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

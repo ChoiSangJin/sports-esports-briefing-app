@@ -13,8 +13,16 @@ class SeasonService {
   final _cache = <String, ({DateTime expires, String? value})>{};
   final _pending = <String, Future<String?>>{};
 
+  void clearCache() {
+    _cache.clear();
+    _boundaries.clear();
+    for (final key in preferences?.getKeys() ?? <String>{}) {
+      if (key.startsWith('season_notice_')) preferences?.remove(key);
+    }
+  }
+
   Future<String?> notice(String path, DateTime now) async {
-    final key = 'season_notice_v1:$path';
+    final key = 'season_notice_v2:$path';
     if (!_cache.containsKey(path)) {
       try {
         final stored = jsonDecode(preferences?.getString(key) ?? 'null');
@@ -61,19 +69,99 @@ class SeasonService {
     });
   }
 
-  Future<Map<String, dynamic>?> _season(String path, [int? year]) async {
-    final response = await dio.get<Map<String, dynamic>>(
+  Future<Json> _scoreboard(String path, {String? dates, int limit = 1}) async {
+    final response = await dio.get<Json>(
       'https://site.api.espn.com/apis/site/v2/sports/$path/scoreboard',
-      queryParameters: {if (year != null) 'dates': '$year', 'limit': 1},
+      queryParameters: {if (dates != null) 'dates': dates, 'limit': limit},
     );
-    final leagues = response.data?['leagues'];
+    return response.data ?? <String, dynamic>{};
+  }
+
+  static Map<String, dynamic>? _seasonFrom(Json scoreboard) {
+    final leagues = scoreboard['leagues'];
     if (leagues is! List || leagues.isEmpty) return null;
     final season = leagues.first['season'];
     return season is Map<String, dynamic> ? season : null;
   }
 
+  /// A completed playoff series alone is not enough: it must be the World
+  /// Series, final, in this season, with the winner's fourth series victory.
+  static String? worldSeriesChampion(Json scoreboard, int year, DateTime now) {
+    for (final event in scoreboard['events'] as List? ?? []) {
+      if ('${event['season']?['year']}' != '$year' ||
+          '${event['season']?['type']}' != '3') {
+        continue;
+      }
+      final date = DateTime.tryParse('${event['date']}');
+      if (date == null || date.isAfter(now)) continue;
+      for (final c in event['competitions'] as List? ?? []) {
+        final status = (c['status'] ?? event['status'])?['type'];
+        if (status?['completed'] != true || status?['state'] != 'post') {
+          continue;
+        }
+        final notes = c['notes'] as List? ?? [];
+        if (!notes.any(
+          (n) => RegExp(
+            r'^World Series(?:\s*-\s*Game \d+)?$',
+            caseSensitive: false,
+          ).hasMatch('${n['headline']}'.trim()),
+        )) {
+          continue;
+        }
+        final series = c['series'];
+        if (series?['type'] != 'playoff' ||
+            series?['completed'] != true ||
+            '${series?['totalCompetitions']}' != '7') {
+          continue;
+        }
+        final teams = series?['competitors'] as List? ?? [];
+        if (teams.length != 2) continue;
+        final winners = teams.where((t) => '${t['wins']}' == '4').toList();
+        final losers = teams
+            .where(
+              (t) =>
+                  (int.tryParse('${t['wins']}') ?? -1) >= 0 &&
+                  (int.tryParse('${t['wins']}') ?? 4) < 4,
+            )
+            .toList();
+        if (winners.length != 1 || losers.length != 1) continue;
+        for (final team in c['competitors'] as List? ?? []) {
+          if ('${team['id']}' == '${winners.single['id']}' &&
+              team['winner'] == true) {
+            final name = team['team']?['displayName']?.toString();
+            if (name != null && name.isNotEmpty) return name;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  Future<String?> _mlbChampion(Json current, int year, DateTime now) async {
+    final found = worldSeriesChampion(current, year, now);
+    if (found != null) return found;
+    // ESPN accepts YYYYMM calendars; a date range is not supported by this
+    // endpoint. At most two monthly requests cover the championship window.
+    for (final month in [10, 11]) {
+      if (DateTime(year, month).isAfter(now)) continue;
+      try {
+        final calendar = await _scoreboard(
+          'baseball/mlb',
+          dates: '$year$month',
+          limit: 100,
+        );
+        final champion = worldSeriesChampion(calendar, year, now);
+        if (champion != null) return champion;
+      } catch (_) {
+        /* An unavailable calendar is not evidence of a champion. */
+      }
+    }
+    return null;
+  }
+
   Future<String?> _load(String path, DateTime now) async {
-    final season = await _season(path);
+    final scoreboard = await _scoreboard(path);
+    final season = _seasonFrom(scoreboard);
     if (season == null) return null;
     final year = int.tryParse('${season['year']}');
     final end = DateTime.tryParse('${season['endDate']}');
@@ -93,10 +181,15 @@ class SeasonService {
             .toLowerCase()
             .replaceAll(' ', '')
             .contains('offseason');
-    if (!now.isAfter(end) && !offseason) return null;
-    var text = '$year 시즌 일정 종료\n정규시즌과 포스트시즌을 포함한 ESPN 시즌 달력 기준입니다.';
+    final champion = path == 'baseball/mlb' && !now.isAfter(end) && !offseason
+        ? await _mlbChampion(scoreboard, year, now)
+        : null;
+    if (!now.isAfter(end) && !offseason && champion == null) return null;
+    var text = champion == null
+        ? '$year 시즌 일정 종료\n정규시즌과 포스트시즌을 포함한 ESPN 시즌 달력 기준입니다.'
+        : 'MLB $year 시즌 종료\n월드시리즈 우승: $champion\nESPN의 경기 종료·시리즈 4승 확정 기록으로 확인했습니다.';
     try {
-      final next = await _season(path, year + 1);
+      final next = _seasonFrom(await _scoreboard(path, dates: '${year + 1}'));
       final nextStart = DateTime.tryParse('${next?['startDate']}');
       // The default endpoint may lag behind a published season rollover.
       if (next?['year'] == year + 1 &&
