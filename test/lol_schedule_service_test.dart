@@ -82,7 +82,10 @@ void main() {
           requests++;
           return textResponse(page);
         });
-      final repository = ScoreRepository(dio);
+      final repository = ScoreRepository(
+        dio,
+        clock: () => DateTime(2026, 10, 27),
+      );
       final first = LolScheduleService.parse(page).first;
       final local = first.startsAt.toLocal();
       final day = DateTime(local.year, local.month, local.day);
