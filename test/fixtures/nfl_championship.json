@@ -1,0 +1,64 @@
+{
+  "events": [
+    {
+      "id": "401772988",
+      "date": "2026-02-08T23:30Z",
+      "season": {
+        "year": 2025,
+        "type": 3,
+        "slug": "post-season"
+      },
+      "status": {
+        "clock": 0.0,
+        "displayClock": "0:00",
+        "period": 4,
+        "type": {
+          "id": "3",
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "description": "Final",
+          "detail": "Final",
+          "shortDetail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "type": "event",
+              "headline": "Super Bowl LX"
+            }
+          ],
+          "competitors": [
+            {
+              "id": "17",
+              "winner": false,
+              "team": {
+                "displayName": "New England Patriots"
+              }
+            },
+            {
+              "id": "26",
+              "winner": true,
+              "team": {
+                "displayName": "Seattle Seahawks"
+              }
+            }
+          ],
+          "status": {
+            "type": {
+              "id": "3",
+              "name": "STATUS_FINAL",
+              "state": "post",
+              "completed": true,
+              "description": "Final",
+              "detail": "Final",
+              "shortDetail": "Final"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

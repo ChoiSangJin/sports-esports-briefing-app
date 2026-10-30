@@ -63,21 +63,29 @@ class ScoreRepository {
     // a verified season boundary instead of scanning fourteen empty dates.
     String? season;
     if (!day.isBefore(today) &&
-        (paths.containsKey(league) || league == League.f1)) {
-      season = await _seasons.notice(paths[league] ?? 'f1', now);
+        (paths.containsKey(league) ||
+            league == League.f1 ||
+            league == League.kbo)) {
+      season = await _seasons.notice(paths[league] ?? league.name, now);
     }
     if (season != null && sameDay(day, today)) {
       return LeagueResult(
         league,
         const [],
         null,
-        league == League.f1 ? 'Jolpica 시즌 일정' : 'ESPN 시즌 일정',
+        league == League.f1
+            ? 'Jolpica 시즌 일정'
+            : league == League.kbo
+            ? 'KBO 공식 일정'
+            : 'ESPN 시즌 일정',
         false,
         season,
       );
     }
     final selected = await _loadDay(league, day);
-    if (selected.matches.isNotEmpty || selected.warning != null) {
+    if (selected.matches.isNotEmpty ||
+        selected.warning != null ||
+        selected.seasonNotice != null) {
       return selected;
     }
     if (season != null) {
@@ -85,7 +93,11 @@ class ScoreRepository {
         league,
         const [],
         null,
-        league == League.f1 ? 'Jolpica 시즌 일정' : 'ESPN 시즌 일정',
+        league == League.f1
+            ? 'Jolpica 시즌 일정'
+            : league == League.kbo
+            ? 'KBO 공식 일정'
+            : 'ESPN 시즌 일정',
         false,
         season,
       );
@@ -116,8 +128,10 @@ class ScoreRepository {
       return LeagueResult(
         league,
         const [],
-        '선택일 경기가 없으며 공식 페이지에 공개된 다음 예정 경기도 없습니다.',
+        null,
         selected.source,
+        false,
+        'LoL 공개 일정 안내\n현재 공개된 다음 경기가 없습니다. 여러 리그가 별도로 진행되므로 전체 시즌 종료를 뜻하지 않습니다. 공식 일정에서 확인해 주세요.',
       );
     }
     final start = day.isBefore(today)
@@ -163,6 +177,67 @@ class ScoreRepository {
         );
       }
       return LeagueResult(league, const [], '공개된 F1 달력에서 다음 예정 경기를 찾지 못했습니다.');
+    }
+    if (league == League.kbo) {
+      try {
+        var cursor = day.isBefore(today) ? today : day;
+        final service = KboService(dio);
+        for (var attempt = 0; attempt < 4; attempt++) {
+          final nextDate = await service.nextDate(cursor);
+          if (nextDate == null) {
+            return LeagueResult(
+              league,
+              const [],
+              null,
+              selected.source,
+              false,
+              'KBO 공개 일정 안내\n다음 경기일이 아직 공개되지 않았습니다. 일정 공백만으로 시즌 종료를 판단하지 않습니다.',
+            );
+          }
+          final local = nextDate.toLocal();
+          final candidates = <UnifiedMatchModel>[];
+          // KST midnight may belong to the preceding local date. Enclose both
+          // local dates to retain Korean evening games on overseas devices.
+          for (var offset = 0; offset <= 1; offset++) {
+            final date = DateTime(local.year, local.month, local.day + offset);
+            final found = await _loadDay(league, date);
+            if (found.warning != null) {
+              throw const FormatException('KBO next game failed');
+            }
+            candidates.addAll(
+              found.matches.where(
+                (m) =>
+                    m.state == MatchState.scheduled &&
+                    m.startsAt.isAfter(now) &&
+                    !m.startsAt.toLocal().isBefore(
+                      day.isBefore(today) ? today : day,
+                    ),
+              ),
+            );
+          }
+          if (candidates.isNotEmpty) {
+            final unique = {for (final m in candidates) m.id: m}.values.toList()
+              ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+            return LeagueResult(league, unique, null, selected.source, true);
+          }
+          cursor = nextDate.add(const Duration(hours: 12));
+        }
+        return LeagueResult(
+          league,
+          const [],
+          null,
+          selected.source,
+          false,
+          'KBO 공식 다음 일정에 취소·변경 경기가 포함돼 있습니다. 다음 예정 경기는 공식 일정에서 확인해 주세요.',
+        );
+      } catch (_) {
+        return LeagueResult(
+          league,
+          const [],
+          'KBO 다음 경기일 조회에 실패했습니다. 다시 시도하거나 공식 일정에서 확인해 주세요.',
+          selected.source,
+        );
+      }
     }
     for (var offset = 0; offset < 14; offset++) {
       final date = DateTime(start.year, start.month, start.day + offset);
@@ -274,8 +349,10 @@ class ScoreRepository {
             return LeagueResult(
               league,
               const [],
-              '선택한 날짜는 공식 페이지가 제공한 일정 범위 밖입니다. 공식 일정에서 확인해 주세요.',
+              null,
               source,
+              false,
+              'LoL 공개 일정 안내\n선택한 날짜는 공식 일정의 공개 범위 밖입니다. 다음 일정은 아직 확인되지 않았으며 전체 시즌 종료를 뜻하지 않습니다.',
             );
           }
         }
