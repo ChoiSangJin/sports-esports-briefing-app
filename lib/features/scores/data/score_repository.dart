@@ -433,6 +433,35 @@ class ScoreRepository {
       (await details(match)).asText;
 
   Future<MatchDetail> details(UnifiedMatchModel match) async {
+    final detail = await _details(match);
+    if (![League.lol, League.kbo].contains(match.league)) return detail;
+    final korean = match.startsAt.toUtc().add(const Duration(hours: 9));
+    final query =
+        '${match.league.label} ${match.participants.map((p) => p.name).join(' ')} ${korean.year}.${korean.month.toString().padLeft(2, '0')}.${korean.day.toString().padLeft(2, '0')}';
+    final search = Uri.https('search.naver.com', '/search.naver', {
+      'where': 'news',
+      'query': query,
+    });
+    return MatchDetail(
+      article: detail.article,
+      teams: detail.teams,
+      sections: detail.sections,
+      plays: detail.plays,
+      notices: detail.notices,
+      news: [
+        ...detail.news,
+        RelatedArticle(
+          '이 경기 관련 뉴스 검색',
+          '팀 이름과 경기 날짜로 검색합니다. 검색 결과는 이 경기의 확정 리포트가 아닐 수 있으며 AI 근거에 포함하지 않습니다.',
+          search.toString(),
+        ),
+        if (match.sourceUrl != null)
+          RelatedArticle('공식 경기 일정·기록 확인', match.source, match.sourceUrl!),
+      ],
+    );
+  }
+
+  Future<MatchDetail> _details(UnifiedMatchModel match) async {
     if (match.league == League.lol) return LolDetailService(dio).load(match);
     if (match.league == League.kbo) {
       try {

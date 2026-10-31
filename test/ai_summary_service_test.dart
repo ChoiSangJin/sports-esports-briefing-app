@@ -150,4 +150,22 @@ void main() {
     expect(await service.summarize(fixture, 'final records'), 'summary 2');
     expect(calls, 2);
   });
+  test(
+    'LoL update does not reuse summaries cached without player statistics',
+    () async {
+      final match = UnifiedMatchModel(
+        id: 'lol:riot:1',
+        league: League.lol,
+        startsAt: DateTime(2026),
+        title: 'Final',
+        state: MatchState.finalScore,
+      );
+      await preferences.setString(
+        'summary:v2:${match.id}:finalScore:gemini-test-model',
+        '{"text":"old missing records","state":"finalScore","savedAt":"2026-10-30T00:00:00Z"}',
+      );
+      final service = AiSummaryService(preferences, keys);
+      expect(service.cached(match), isNull);
+    },
+  );
 }

@@ -54,7 +54,7 @@ class AiSummaryService {
   }
 
   String _cacheKey(UnifiedMatchModel m) =>
-      'summary:v2:${m.id}:${m.state.name}:$model';
+      'summary:${m.league == League.lol ? 'v3' : 'v2'}:${m.id}:${m.state.name}:$model';
 
   String? cached(UnifiedMatchModel match) {
     final raw = preferences.getString(_cacheKey(match));

@@ -106,6 +106,13 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
     padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
     children: [
       Text(widget.match.title, style: Theme.of(context).textTheme.titleLarge),
+      if (widget.match.state == MatchState.scheduled) ...[
+        const SizedBox(height: 12),
+        const Text('경기 전 정보', style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text(
+          '아직 시작하지 않은 경기입니다. 결과·득점·경기 리포트는 경기 진행 또는 종료 후 제공됩니다. 아래 최근 경기 기록과 관련 자료를 확인하세요.',
+        ),
+      ],
       const SizedBox(height: 16),
       MatchCard(match: widget.match),
       if (widget.match.sourceUrl != null)
@@ -215,7 +222,9 @@ class _MatchDetailSheetState extends ConsumerState<MatchDetailSheet> {
       ] else
         SelectableText(
           _detail.article.isEmpty
-              ? '제공처에 기사 본문이 없습니다. 경기 기록과 아래 관련 기사 또는 공식 출처를 확인하세요.'
+              ? widget.match.state == MatchState.scheduled
+                    ? '경기 전에는 결과 리포트가 없습니다. 제공된 최근 경기와 관련 자료를 확인하세요.'
+                    : '현재 연결된 제공처에서 기사 본문을 가져오지 않았습니다. 표시된 기록·영상·기사 검색 또는 공식 출처를 확인하세요.'
               : _detail.article,
         ),
       if (_detail.plays.isNotEmpty) ...[
