@@ -66,6 +66,28 @@ class MatchDetail {
               item['links']['web']['href'] as String,
             ),
       ],
+      sections: [
+        for (final group in data['lastFiveGames'] as List? ?? [])
+          if ((group['events'] as List? ?? []).isNotEmpty)
+            RecordSection(
+              '${group['team']?['displayName'] ?? '팀'} · 최근 경기',
+              const ['날짜', '상대', '결과', '스코어'],
+              [
+                for (final event in (group['events'] as List).take(5))
+                  [
+                    _localDate(event['gameDate']),
+                    '${event['opponent']?['displayName'] ?? '미제공'}',
+                    switch (event['gameResult']) {
+                      'W' => '승',
+                      'D' => '무',
+                      'L' => '패',
+                      _ => '미제공',
+                    },
+                    '${event['score'] ?? '—'}',
+                  ],
+              ],
+            ),
+      ],
       plays: [
         for (final play
             in ((data['plays'] as List? ?? []).isNotEmpty
@@ -83,6 +105,13 @@ class MatchDetail {
           _statistics(row as Map<String, dynamic>),
       ],
     );
+  }
+
+  static String _localDate(dynamic raw) {
+    final date = DateTime.tryParse('$raw')?.toLocal();
+    return date == null
+        ? '미제공'
+        : '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
   }
 
   static TeamStatistics _statistics(Map<String, dynamic> row) {

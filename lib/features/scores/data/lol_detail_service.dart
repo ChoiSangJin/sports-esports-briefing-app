@@ -4,7 +4,9 @@ import '../../../models/match_detail.dart';
 import '../../../models/unified_match_model.dart';
 
 class LolDetailService {
-  LolDetailService(this.dio);
+  LolDetailService(this.dio, {DateTime Function()? clock})
+    : _now = clock ?? DateTime.now;
+  final DateTime Function() _now;
   final Dio dio;
   Future<MatchDetail> load(UnifiedMatchModel match) async {
     final games = jsonDecode(match.detailParameters['games'] ?? '[]') as List;
@@ -78,9 +80,15 @@ class LolDetailService {
           final initial = DateTime.parse(
             frames.last['rfc460Timestamp'] as String,
           );
-          final point = game['state'] == 'completed'
+          final availableUntil = _now().toUtc().subtract(
+            const Duration(seconds: 30),
+          );
+          final requested = game['state'] == 'completed'
               ? initial.add(const Duration(hours: 6))
-              : DateTime.now().toUtc().subtract(const Duration(seconds: 30));
+              : availableUntil;
+          final point = requested.isAfter(availableUntil)
+              ? availableUntil
+              : requested;
           final aligned = DateTime.fromMillisecondsSinceEpoch(
             point.millisecondsSinceEpoch ~/ 10000 * 10000,
             isUtc: true,

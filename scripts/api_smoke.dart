@@ -1,6 +1,7 @@
 // Run with: flutter test scripts/api_smoke.dart --reporter expanded
 // This is an explicit live audit, not part of the offline CI suite.
 import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,7 +86,32 @@ void main() {
         stdout.writeln(
           'LoL detail: ${detail.sections.length} sections, ${detail.notices.length} notices',
         );
-        expect(detail.sections, isNotEmpty);
+        expect(
+          detail.sections.any(
+            (section) =>
+                section.headers.contains('챔피언') && section.rows.isNotEmpty,
+          ),
+          isTrue,
+          reason:
+              'LoL player records are missing; a set-status section is insufficient',
+        );
+        final completedGames =
+            (jsonDecode(match.detailParameters['games'] ?? '[]') as List)
+                .where((game) => game['state'] == 'completed')
+                .length;
+        final playerSections = detail.sections
+            .where((section) => section.headers.contains('챔피언'))
+            .toList();
+        expect(
+          playerSections.length,
+          completedGames * 2,
+          reason: 'Every completed LoL set must have both teams',
+        );
+        expect(
+          playerSections.every((section) => section.rows.length == 5),
+          isTrue,
+          reason: 'Each LoL team must have five real player rows',
+        );
         final response = await dio.get<Json>(
           'https://api.jolpi.ca/ergast/f1/${now.year}.json',
           queryParameters: {'limit': 100},
