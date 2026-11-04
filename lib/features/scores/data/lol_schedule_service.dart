@@ -5,11 +5,140 @@ import '../../../models/unified_match_model.dart';
 class LolScheduleService {
   LolScheduleService(this.dio);
   final Dio dio;
+  int _generation = 0;
+  final _days =
+      <String, ({DateTime fetched, List<UnifiedMatchModel> matches})>{};
+  // Public persisted document identifier from the site's published operation
+  // manifest (not an API key or credential). Fail visibly if it is retired.
+  static const scheduleOperation =
+      '7e9af7acad0f697e265c1f2fa49e5ba6bbf409e35cf1700dc2202ff00169f715';
+
+  Future<List<UnifiedMatchModel>> loadDay(DateTime day) async {
+    final generation = _generation;
+    final key = '${day.year}-${day.month}-${day.day}';
+    final cached = _days[key];
+    if (cached != null &&
+        DateTime.now().difference(cached.fetched).inSeconds < 20) {
+      return cached.matches;
+    }
+    String date(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final start = DateTime(day.year, day.month, day.day).toUtc();
+    final end = DateTime(day.year, day.month, day.day + 1).toUtc();
+    final found = <String, UnifiedMatchModel>{};
+    // The upstream treats mixed states differently; query each explicitly.
+    for (final state in ['completed', 'inProgress', 'unstarted']) {
+      String? token;
+      final seen = <String>{};
+      for (var page = 0; page < 10; page++) {
+        final response = await dio.post<Map<String, dynamic>>(
+          'https://lolesports.com/api/gql',
+          options: Options(
+            headers: {
+              'apollographql-client-name': 'Sports Briefing',
+              'apollographql-client-version': '1.8.2',
+            },
+          ),
+          data: {
+            'operationName': 'scheduleEvents',
+            'variables': {
+              'hl': 'ko-KR',
+              'sport': ['lol'],
+              'eventType': 'match',
+              'eventDateStart': date(start.subtract(const Duration(days: 1))),
+              'eventDateEnd': date(end.add(const Duration(days: 1))),
+              'eventState': [state],
+              'pageSize': 100,
+              if (token != null) 'pageToken': token,
+            },
+            'extensions': {
+              'persistedQuery': {'version': 1, 'sha256Hash': scheduleOperation},
+            },
+          },
+        );
+        final body = response.data;
+        if (body == null ||
+            (body['errors'] as List? ?? []).isNotEmpty ||
+            body['data']?['esports']?['events'] is! List) {
+          throw const FormatException(
+            'Official date-specific schedule unavailable',
+          );
+        }
+        final data = body['data']['esports'];
+        for (final event in data['events'] as List) {
+          if (event['type'] != 'match') continue;
+          final match = _match(event as Map<String, dynamic>);
+          if (sameDay(match.startsAt, day)) _store(found, match);
+        }
+        token = data['pages']?['older'] as String?;
+        if (token == null) break;
+        if (!seen.add(token) || page == 9) {
+          throw const FormatException('Incomplete official schedule pages');
+        }
+      }
+    }
+    final matches = found.values.toList()
+      ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    if (generation == _generation) {
+      _days[key] = (fetched: DateTime.now(), matches: matches);
+    }
+    return matches;
+  }
+
+  Future<List<UnifiedMatchModel>> upcoming(DateTime from) async {
+    String date(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final response = await dio.post<Map<String, dynamic>>(
+      'https://lolesports.com/api/gql',
+      options: Options(
+        headers: {
+          'apollographql-client-name': 'Sports Briefing',
+          'apollographql-client-version': '1.8.2',
+        },
+      ),
+      data: {
+        'operationName': 'scheduleEvents',
+        'variables': {
+          'hl': 'ko-KR',
+          'sport': ['lol'],
+          'eventType': 'match',
+          'eventDateStart': date(
+            from.toUtc().subtract(const Duration(days: 1)),
+          ),
+          'eventDateEnd': date(from.toUtc().add(const Duration(days: 90))),
+          'eventState': ['unstarted'],
+          'pageSize': 100,
+        },
+        'extensions': {
+          'persistedQuery': {'version': 1, 'sha256Hash': scheduleOperation},
+        },
+      },
+    );
+    final body = response.data;
+    if (body == null ||
+        (body['errors'] as List? ?? []).isNotEmpty ||
+        body['data']?['esports']?['events'] is! List) {
+      throw const FormatException('Official upcoming schedule unavailable');
+    }
+    return (body['data']['esports']['events'] as List)
+        .where((e) => e['type'] == 'match')
+        .map((e) => _match(e as Map<String, dynamic>))
+        .where(
+          (m) =>
+              m.startsAt.isAfter(DateTime.now()) &&
+              !m.startsAt.toLocal().isBefore(from),
+        )
+        .toList()
+      ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+  }
+
   List<UnifiedMatchModel>? _cached;
   DateTime? _fetchedAt;
   void clearCache() {
+    _generation++;
     _cached = null;
     _fetchedAt = null;
+    _days.clear();
   }
 
   static const scheduleUrl = 'https://lolesports.com/ko-KR/schedule';
@@ -57,7 +186,7 @@ class LolScheduleService {
         }
         validPayloads++;
         for (final match in parsed) {
-          matches[match.id] = match;
+          _store(matches, match);
         }
       } on FormatException {
         continue;
@@ -68,6 +197,21 @@ class LolScheduleService {
     }
     return matches.values.toList()
       ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+  }
+
+  static void _store(
+    Map<String, UnifiedMatchModel> matches,
+    UnifiedMatchModel match,
+  ) {
+    int rank(MatchState state) => switch (state) {
+      MatchState.finalScore || MatchState.cancelled => 3,
+      MatchState.live => 2,
+      _ => 1,
+    };
+    final previous = matches[match.id];
+    if (previous == null || rank(match.state) >= rank(previous.state)) {
+      matches[match.id] = match;
+    }
   }
 
   static int? _objectEnd(String text, int start) {
