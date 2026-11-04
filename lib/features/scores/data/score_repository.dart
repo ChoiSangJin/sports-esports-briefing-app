@@ -89,6 +89,7 @@ class ScoreRepository {
         selected.seasonNotice != null) {
       return selected;
     }
+    if (day.isBefore(today)) return selected;
     if (season != null) {
       return LeagueResult(
         league,
@@ -104,7 +105,17 @@ class ScoreRepository {
       );
     }
     if (league == League.lol) {
-      final all = await _lol.load();
+      List<UnifiedMatchModel> all;
+      try {
+        all = await _lol.upcoming(day);
+      } catch (_) {
+        return LeagueResult(
+          league,
+          const [],
+          'LoL 다음 일정 조회에 실패했습니다. 다시 시도해 주세요.',
+          selected.source,
+        );
+      }
       final next =
           all
               .where(
@@ -389,26 +400,8 @@ class ScoreRepository {
         }
         source = 'Jolpica F1';
       } else if (league == League.lol) {
-        matches = await _lol.load();
-        source = 'LoL e스포츠 공식 일정';
-        if (matches.isNotEmpty) {
-          DateTime dateOnly(DateTime d) {
-            final local = d.toLocal();
-            return DateTime(local.year, local.month, local.day);
-          }
-
-          final last = dateOnly(matches.last.startsAt);
-          if (day.isAfter(last)) {
-            return LeagueResult(
-              league,
-              const [],
-              null,
-              source,
-              false,
-              'LoL 공개 일정 안내\n선택한 날짜는 공식 일정의 공개 범위 밖입니다. 다음 일정은 아직 확인되지 않았으며 전체 시즌 종료를 뜻하지 않습니다.',
-            );
-          }
-        }
+        matches = await _lol.loadDay(day);
+        source = 'LoL e스포츠 공식 날짜별 일정';
       } else {
         matches = await KboService(dio).load(day);
         source = 'KBO 공식 게임센터';

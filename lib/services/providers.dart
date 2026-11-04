@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,8 +69,16 @@ class Favorites extends StateNotifier<Set<League>> {
   }
 }
 
-final leagueScoresProvider = FutureProvider.family<LeagueResult, League>(
-  (ref, league) => ref
-      .watch(repositoryProvider)
-      .load(league, ref.watch(selectedDateProvider)),
-);
+final leagueScoresProvider = FutureProvider.autoDispose
+    .family<LeagueResult, League>((ref, league) {
+      final day = ref.watch(selectedDateProvider);
+      final now = DateTime.now();
+      if (league == League.lol &&
+          day.year == now.year &&
+          day.month == now.month &&
+          day.day == now.day) {
+        final timer = Timer(const Duration(seconds: 30), ref.invalidateSelf);
+        ref.onDispose(timer.cancel);
+      }
+      return ref.watch(repositoryProvider).load(league, day);
+    });

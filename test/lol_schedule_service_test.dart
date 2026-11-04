@@ -80,6 +80,16 @@ void main() {
       final dio = Dio()
         ..httpClientAdapter = HttpFixture((options) {
           requests++;
+          if (options.method == 'POST') {
+            return jsonResponse({
+              'data': {
+                'esports': {
+                  'events': (jsonDecode(payload) as Map)['events'],
+                  'pages': {},
+                },
+              },
+            });
+          }
           return textResponse(page);
         });
       final repository = ScoreRepository(
@@ -93,12 +103,13 @@ void main() {
       expect(feed.warning, isNull);
       expect(feed.matches.every((m) => sameDay(m.startsAt, day)), isTrue);
       await repository.load(League.lol, day);
-      expect(requests, 1);
+      expect(requests, 3);
       repository.clearCache();
       await repository.load(League.lol, day);
-      expect(requests, 2);
+      expect(requests, 6);
       final outside = await repository.load(League.lol, DateTime(2000));
-      expect(outside.isUpcoming, isTrue);
+      expect(outside.isUpcoming, isFalse);
+      expect(outside.matches, isEmpty);
       expect(
         outside.matches.every((m) => m.state == MatchState.scheduled),
         isTrue,

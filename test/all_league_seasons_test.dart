@@ -7,7 +7,6 @@ import 'package:sports_esports_briefing/features/scores/data/kbo_season_service.
 import 'package:sports_esports_briefing/features/scores/data/score_repository.dart';
 import 'package:sports_esports_briefing/models/unified_match_model.dart';
 import 'score_repository_test.dart' show FixtureAdapter;
-import 'support/http_fixture.dart';
 
 Map<String, dynamic> fixture(String name) =>
     jsonDecode(File('test/fixtures/$name.json').readAsStringSync())
@@ -188,12 +187,13 @@ void main() {
   test(
     'LoL outside published schedule is never called entire season ended',
     () async {
-      final payload = File(
-        'test/fixtures/lol_official_events.json',
-      ).readAsStringSync();
       final dio = Dio()
-        ..httpClientAdapter = HttpFixture(
-          (_) => textResponse('"esports":$payload'),
+        ..httpClientAdapter = FixtureAdapter(
+          (_) => {
+            'data': {
+              'esports': {'events': [], 'pages': {}},
+            },
+          },
         );
       final result = await ScoreRepository(
         dio,
