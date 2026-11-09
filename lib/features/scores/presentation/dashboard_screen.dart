@@ -7,6 +7,8 @@ import '../../settings/api_key_sheet.dart';
 import 'match_card.dart';
 import 'match_detail_sheet.dart';
 import 'source_link.dart';
+import 'record_sections.dart';
+import '../data/korean_league_service.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -161,6 +163,7 @@ class DashboardScreen extends ConsumerWidget {
               child: RefreshIndicator(
                 onRefresh: () async {
                   ref.read(repositoryProvider).clearCache();
+                  ref.invalidate(lckStandingsProvider);
                   final targets = selected == null ? leagues : [selected];
                   for (final league in targets) {
                     ref.invalidate(leagueScoresProvider(league));
@@ -257,6 +260,14 @@ class _LeagueSection extends ConsumerWidget {
                   url:
                       'https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx',
                 ),
+              if (KoreanLeagueService.supports(league))
+                MatchSourceLink(
+                  label: KoreanLeagueService.source(league),
+                  url: KoreanLeagueService.officialUrl(league),
+                ),
+              if (league == League.lol) const _LckStandings(),
+              if (data.sections.isNotEmpty)
+                RecordSections(sections: data.sections),
               if (data.warning != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -311,4 +322,37 @@ class _LeagueSection extends ConsumerWidget {
       ],
     );
   }
+}
+
+class _LckStandings extends ConsumerStatefulWidget {
+  const _LckStandings();
+  @override
+  ConsumerState<_LckStandings> createState() => _LckStandingsState();
+}
+
+class _LckStandingsState extends ConsumerState<_LckStandings> {
+  bool expanded = false;
+  @override
+  Widget build(BuildContext context) => ExpansionTile(
+    title: const Text('LCK 공식 순위 · 최근 시작 대회'),
+    onExpansionChanged: (value) => setState(() => expanded = value),
+    children: [
+      if (expanded)
+        ref
+            .watch(lckStandingsProvider)
+            .when(
+              loading: () => const LinearProgressIndicator(),
+              error: (_, stack) => TextButton(
+                onPressed: () => ref.invalidate(lckStandingsProvider),
+                child: const Text('순위 조회 실패 · 다시 시도'),
+              ),
+              data: (sections) => sections.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('현재 시즌에 공개된 LCK 순위가 없습니다.'),
+                    )
+                  : RecordSections(sections: sections),
+            ),
+    ],
+  );
 }

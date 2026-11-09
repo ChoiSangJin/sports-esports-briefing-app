@@ -36,7 +36,7 @@ class LolScheduleService {
           options: Options(
             headers: {
               'apollographql-client-name': 'Sports Briefing',
-              'apollographql-client-version': '1.8.2',
+              'apollographql-client-version': '1.9.0',
             },
           ),
           data: {
@@ -93,7 +93,7 @@ class LolScheduleService {
       options: Options(
         headers: {
           'apollographql-client-name': 'Sports Briefing',
-          'apollographql-client-version': '1.8.2',
+          'apollographql-client-version': '1.9.0',
         },
       ),
       data: {

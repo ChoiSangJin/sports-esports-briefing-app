@@ -17,6 +17,9 @@ abstract final class TacticalColors {
     League.mlb => const Color(0xFF10B981),
     League.kbo => const Color(0xFF84CC16),
     League.epl => const Color(0xFFC084FC),
+    League.kbl => const Color(0xFFFB923C),
+    League.kleague1 => const Color(0xFF38BDF8),
+    League.kleague2 => const Color(0xFF2DD4BF),
   };
 }
 
