@@ -222,6 +222,76 @@ class LolDetailService {
         ),
       );
     }
+    final blue = frame['blueTeam'] as Map;
+    final red = frame['redTeam'] as Map;
+    final blueName =
+        names['${data['gameMetadata']?['blueTeamMetadata']?['esportsTeamId']}'] ??
+        '블루 팀';
+    final redName =
+        names['${data['gameMetadata']?['redTeamMetadata']?['esportsTeamId']}'] ??
+        '레드 팀';
+    final comparison = <List<String>>[];
+    for (final metric in {
+      'totalGold': '골드',
+      'totalKills': '킬',
+      'towers': '타워',
+      'barons': '바론',
+    }.entries) {
+      final b = num.tryParse('${blue[metric.key]}');
+      final r = num.tryParse('${red[metric.key]}');
+      if (b != null && r != null) {
+        final gap = b - r;
+        comparison.add([
+          metric.value,
+          '${gap.abs()} · ${gap == 0
+              ? '동률'
+              : gap > 0
+              ? '$blueName 우세'
+              : '$redName 우세'}',
+        ]);
+      }
+    }
+    if (comparison.isNotEmpty) {
+      result.add(
+        RecordSection(
+          '$title · ${completed ? '종료 시점' : '최신 관측 시점'} 격차 분석 (블루·레드 실측 기록)',
+          const ['항목', '격차'],
+          comparison,
+        ),
+      );
+    }
+    // A window is only a short observation range. Never call these full-game
+    // turning points or infer a winner/causation from a gold advantage.
+    if (sorted.length > 1) {
+      num? goldGap(dynamic f) {
+        final b = num.tryParse('${f['blueTeam']?['totalGold']}');
+        final r = num.tryParse('${f['redTeam']?['totalGold']}');
+        return b == null || r == null ? null : b - r;
+      }
+
+      final first = goldGap(sorted.first), last = goldGap(frame);
+      if (first != null && last != null) {
+        final delta = last - first;
+        result.add(
+          RecordSection(
+            '$title · 수신 구간 골드 흐름 (전체 경기 분석 아님)',
+            const ['항목', '관측값'],
+            [
+              [
+                '수신 구간',
+                '${sorted.first['rfc460Timestamp']} ~ ${frame['rfc460Timestamp']}',
+              ],
+              [
+                '격차 변화',
+                delta == 0
+                    ? '변화 없음'
+                    : '${delta > 0 ? blueName : redName} 방향으로 ${delta.abs()} 골드 변화',
+              ],
+            ],
+          ),
+        );
+      }
+    }
     return result;
   }
 }

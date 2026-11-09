@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../features/scores/data/score_repository.dart';
 import '../models/unified_match_model.dart';
+import '../models/match_detail.dart';
 import 'api_key_storage_service.dart';
 import 'ai_summary_service.dart';
 
@@ -82,3 +83,7 @@ final leagueScoresProvider = FutureProvider.autoDispose
       }
       return ref.watch(repositoryProvider).load(league, day);
     });
+
+final lckStandingsProvider = FutureProvider.autoDispose<List<RecordSection>>(
+  (ref) => ref.watch(repositoryProvider).lckStandings(),
+);

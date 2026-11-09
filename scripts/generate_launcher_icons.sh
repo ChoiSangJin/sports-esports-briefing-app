@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 icon_tmp=$(mktemp -d)
 trap 'rm -rf "$icon_tmp"' EXIT
-# Ignore nearly transparent generator pixels when locating the ball, so all
+# Ignore nearly transparent generator pixels when locating the emblem, so all
 # density variants share the same visual center and safe-area dimensions.
 icon_bounds=$(magick assets/branding/ball-foreground.png -alpha extract -threshold 50% -format '%@' info:)
 magick assets/branding/ball-foreground.png -crop "$icon_bounds" +repage "$icon_tmp/ball.png"

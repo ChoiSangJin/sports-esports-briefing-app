@@ -90,7 +90,11 @@ void main() {
       final detail = await LolDetailService(dio).load(match);
       expect(calls, 2);
       expect(detail.notices, isEmpty);
-      expect(detail.sections, hasLength(5));
+      expect(
+        detail.sections.where((s) => s.title.contains('격차 분석')),
+        hasLength(1),
+      );
+      expect(detail.sections.length, greaterThanOrEqualTo(6));
     },
   );
   test(

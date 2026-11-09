@@ -1,9 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- All strokes remain inside the adaptive icon's central 66dp safe circle. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="3" android:strokeLineCap="round"
-        android:pathData="M54,26 A28,28 0,1 0,54 82 A28,28 0,1 0,54 26 M26,54 L82,54 M54,26 L54,82 M34.2,34.2 C51,43 51,65 34.2,73.8 M73.8,34.2 C57,43 57,65 73.8,73.8" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M34,29 L65,29 L78,42 L78,75 Q78,79 74,79 L34,79 Q30,79 30,75 L30,33 Q30,29 34,29 M65,29 L65,42 L78,42 M58,50 L70,50 M58,58 L70,58 M38,67 L70,67 M38,73 L70,73" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2" android:fillColor="#00000000" android:pathData="M44,39 A10,10 0,1 1,43.99,39 M44,44 L49,48 L47,54 L41,54 L39,48 Z M44,39 L44,44 M54,47 L49,48 M50,57 L47,54 M38,57 L41,54 M34,47 L39,48" />
 </vector>

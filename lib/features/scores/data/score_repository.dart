@@ -8,6 +8,8 @@ import 'lol_schedule_service.dart';
 import 'kbo_detail_service.dart';
 import 'lol_detail_service.dart';
 import 'season_service.dart';
+import 'korean_league_service.dart';
+import 'lck_standings_service.dart';
 
 class LeagueResult {
   const LeagueResult(
@@ -17,6 +19,7 @@ class LeagueResult {
     this.source = '',
     this.isUpcoming = false,
     this.seasonNotice,
+    this.sections = const [],
   ]);
   final League league;
   final List<UnifiedMatchModel> matches;
@@ -24,6 +27,7 @@ class LeagueResult {
   final String source;
   final bool isUpcoming;
   final String? seasonNotice;
+  final List<RecordSection> sections;
 }
 
 class ScoreRepository {
@@ -33,16 +37,24 @@ class ScoreRepository {
     SharedPreferences? preferences,
   }) : _now = clock ?? DateTime.now,
        _lol = LolScheduleService(dio),
+       _lck = LckStandingsService(dio),
+       _korean = KoreanLeagueService(dio),
        _seasons = SeasonService(dio, preferences: preferences);
   final DateTime Function() _now;
   final SeasonService _seasons;
   final Dio dio;
   final LolScheduleService _lol;
+  final LckStandingsService _lck;
+  final KoreanLeagueService _korean;
   final _espn = <String, Future<List<UnifiedMatchModel>>>{};
   DateTime _cachedAt = DateTime.now();
   void clearCache({bool includeSeasons = true}) {
-    if (includeSeasons) _seasons.clearCache();
+    if (includeSeasons) {
+      _seasons.clearCache();
+      _lck.clearCache();
+    }
     _lol.clearCache();
+    _korean.clearCache();
     _espn.clear();
     _cachedAt = DateTime.now();
   }
@@ -53,6 +65,8 @@ class ScoreRepository {
     League.mlb: 'baseball/mlb',
     League.epl: 'soccer/eng.1',
   };
+
+  Future<List<RecordSection>> lckStandings() => _lck.load(_now());
 
   Future<LeagueResult> load(League league, DateTime day) async {
     if (DateTime.now().difference(_cachedAt).inSeconds >= 60) {
@@ -82,6 +96,9 @@ class ScoreRepository {
         false,
         season,
       );
+    }
+    if (KoreanLeagueService.supports(league)) {
+      return _loadKorean(league, day, today, now);
     }
     final selected = await _loadDay(league, day);
     if (selected.matches.isNotEmpty ||
@@ -334,6 +351,73 @@ class ScoreRepository {
     );
   }
 
+  Future<LeagueResult> _loadKorean(
+    League league,
+    DateTime day,
+    DateTime today,
+    DateTime now,
+  ) async {
+    var matches = <UnifiedMatchModel>[];
+    String? warning;
+    var upcoming = false;
+    String? notice;
+    try {
+      matches = await _korean.day(league, day);
+      if (matches.isEmpty && !day.isBefore(today)) {
+        final korean = day.toUtc().add(const Duration(hours: 9));
+        for (var offset = 0; offset < 3; offset++) {
+          final candidates =
+              (await _korean.month(
+                    league,
+                    DateTime(korean.year, korean.month + offset),
+                  ))
+                  .where(
+                    (m) =>
+                        m.state == MatchState.scheduled &&
+                        m.startsAt.isAfter(now) &&
+                        !m.startsAt.toLocal().isBefore(day),
+                  )
+                  .toList()
+                ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+          if (candidates.isNotEmpty) {
+            matches = candidates
+                .where(
+                  (m) =>
+                      sameDay(m.startsAt, candidates.first.startsAt.toLocal()),
+                )
+                .toList();
+            upcoming = true;
+            break;
+          }
+        }
+        if (matches.isEmpty) {
+          notice =
+              '${league.label} 공개 일정 안내\n3개월 범위에서 다음 경기가 확인되지 않았습니다. 일정 공백만으로 시즌 종료를 판단하지 않습니다.';
+        }
+      }
+    } catch (_) {
+      warning = '${league.label} 공식 일정 조회에 실패했습니다. 다시 시도하거나 공식 사이트에서 확인해 주세요.';
+    }
+    var sections = <RecordSection>[];
+    try {
+      sections = await _korean.standings(league, now);
+    } catch (_) {
+      warning = [
+        if (warning != null) warning,
+        '현재 순위를 불러오지 못했습니다. 경기 일정과 별도로 다시 시도할 수 있습니다.',
+      ].join('\n');
+    }
+    return LeagueResult(
+      league,
+      matches,
+      warning,
+      KoreanLeagueService.source(league),
+      upcoming,
+      notice,
+      sections,
+    );
+  }
+
   Future<LeagueResult> _loadDay(League league, DateTime day) async {
     try {
       List<UnifiedMatchModel> matches;
@@ -427,7 +511,15 @@ class ScoreRepository {
 
   Future<MatchDetail> details(UnifiedMatchModel match) async {
     final detail = await _details(match);
-    if (![League.lol, League.kbo].contains(match.league)) return detail;
+    if (![
+      League.lol,
+      League.kbo,
+      League.kbl,
+      League.kleague1,
+      League.kleague2,
+    ].contains(match.league)) {
+      return detail;
+    }
     final korean = match.startsAt.toUtc().add(const Duration(hours: 9));
     final query =
         '${match.league.label} ${match.participants.map((p) => p.name).join(' ')} ${korean.year}.${korean.month.toString().padLeft(2, '0')}.${korean.day.toString().padLeft(2, '0')}';
@@ -456,6 +548,22 @@ class ScoreRepository {
 
   Future<MatchDetail> _details(UnifiedMatchModel match) async {
     if (match.league == League.lol) return LolDetailService(dio).load(match);
+    if (KoreanLeagueService.supports(match.league)) {
+      return MatchDetail(
+        article: match.report,
+        teams: [
+          for (final p in match.participants)
+            TeamStatistics(
+              p.name,
+              {if (p.score != null) 'score': p.score!},
+              const {'score': '점수'},
+            ),
+        ],
+        notices: const [
+          '공식 일정 API가 제공하는 점수·경기장·중계 정보를 표시합니다. 선수별 상세 기록과 기사 원문은 공식 경기 페이지에서 확인해 주세요.',
+        ],
+      );
+    }
     if (match.league == League.kbo) {
       try {
         return await KboDetailService(dio).load(match);
