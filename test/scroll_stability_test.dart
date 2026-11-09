@@ -44,7 +44,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       SharedPreferences.setMockInitialValues({
-        'favorite_leagues': ['kleague2', 'kbl'],
+        'favorite_leagues': ['kleague2', 'kbl', 'kleague1'],
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = RefreshRepository();
@@ -61,6 +61,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('현재 순위'), findsNothing);
       expect(find.text('K리그 2'), findsNothing);
+      expect(find.text('KBL'), findsNothing);
       final scroll = find.byType(SingleChildScrollView).last;
       await tester.drag(scroll, const Offset(0, -1200));
       await tester.pumpAndSettle();
@@ -85,7 +86,7 @@ void main() {
       container.invalidate(leagueScoresProvider(League.lol));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text('KBL 홈 0'), findsOneWidget);
+      expect(find.text('K리그 1 홈 0'), findsOneWidget);
       expect(state.position.pixels, closeTo(offset, 0.1));
       repo.refresh!.complete(repo.result(League.lol));
       await tester.pumpAndSettle();

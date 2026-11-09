@@ -12,7 +12,7 @@ Future<void> main() async {
     ),
   );
   final now = DateTime.now();
-  for (final league in [League.kbl, League.kleague1]) {
+  for (final league in [League.kleague1]) {
     final service = KoreanLeagueService(dio);
     try {
       final matches = await service.month(league, now);
