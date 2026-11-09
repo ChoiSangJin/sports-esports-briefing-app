@@ -2,7 +2,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:sports_esports_briefing/features/scores/data/korean_league_service.dart';
-import 'package:sports_esports_briefing/features/scores/data/lck_standings_service.dart';
 import 'package:sports_esports_briefing/models/unified_match_model.dart';
 
 Future<void> main() async {
@@ -13,14 +12,11 @@ Future<void> main() async {
     ),
   );
   final now = DateTime.now();
-  for (final league in [League.kbl, League.kleague1, League.kleague2]) {
+  for (final league in [League.kbl, League.kleague1]) {
     final service = KoreanLeagueService(dio);
     try {
       final matches = await service.month(league, now);
-      final ranks = await service.standings(league, now);
-      stdout.writeln(
-        '${league.label}: matches=${matches.length}, rank sections=${ranks.length}',
-      );
+      stdout.writeln('${league.label}: matches=${matches.length}');
     } on DioException catch (e) {
       stdout.writeln(
         '${league.label}: transport failed (${e.response?.statusCode ?? e.type.name})',
@@ -28,12 +24,6 @@ Future<void> main() async {
     } catch (_) {
       stdout.writeln('${league.label}: schema validation failed');
     }
-  }
-  try {
-    final result = await LckStandingsService(dio).load(now);
-    stdout.writeln('LCK: ${result.length} official stage tables');
-  } catch (_) {
-    stdout.writeln('LCK: query failed');
   }
   dio.close();
 }

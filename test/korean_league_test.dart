@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sports_esports_briefing/features/scores/data/korean_league_service.dart';
 import 'package:sports_esports_briefing/features/scores/data/score_repository.dart';
-import 'package:sports_esports_briefing/features/scores/presentation/record_sections.dart';
 import 'package:sports_esports_briefing/models/unified_match_model.dart';
 import 'support/http_fixture.dart';
 
@@ -57,7 +55,7 @@ void main() {
     },
   );
   test(
-    'past empty day never changes to upcoming; rank failure keeps schedule',
+    'past empty day never changes to upcoming; no rank API requested',
     () async {
       var scheduleCalls = 0;
       final raw = [fixture('kbl_schedule.json').first];
@@ -72,7 +70,7 @@ void main() {
       final repo = ScoreRepository(dio, clock: () => DateTime(2026, 11, 9));
       final result = await repo.load(League.kbl, DateTime(2026, 4, 1));
       expect(result.matches, isNotEmpty);
-      expect(result.warning, contains('순위'));
+      expect(result.warning, isNull);
       expect(result.isUpcoming, isFalse);
       final empty = await repo.load(League.kbl, DateTime(2026, 4, 30));
       expect(empty.matches, isEmpty);
@@ -99,35 +97,6 @@ void main() {
       ).load(League.kbl, DateTime(2026, 11, 9));
       expect(r.isUpcoming, isTrue);
       expect(r.matches.single.participants.first.score, isNull);
-    },
-  );
-  testWidgets(
-    'current standings fit a narrow phone without sideways scrolling',
-    (tester) async {
-      tester.view.physicalSize = const Size(320, 700);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final sections = KoreanLeagueService.parseStandings(
-        [
-          {'rank': 1, 'tnameF': '대구 한국가스공사 페가수스', 'win': 25, 'loss': 10},
-        ],
-        League.kbl,
-        DateTime(2026, 11, 9),
-      );
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: RecordSections(sections: sections),
-            ),
-          ),
-        ),
-      );
-      await tester.tap(find.text(sections.single.title));
-      await tester.pumpAndSettle();
-      expect(find.text('대구 한국가스공사 페가수스'), findsOneWidget);
-      expect(tester.takeException(), isNull);
     },
   );
 }
