@@ -8,39 +8,15 @@ class KoreanLeagueService {
   final Dio dio;
   final _months = <String, Future<List<UnifiedMatchModel>>>{};
   void clearCache() => _months.clear();
-  static bool supports(League league) =>
-      [League.kbl, League.kleague1].contains(league);
-  static String officialUrl(League league) => league == League.kbl
-      ? 'https://www.kbl.or.kr/game/schedule-list'
-      : 'https://www.kleague.com/schedule.do';
+  static bool supports(League league) => league == League.kleague1;
+  static String officialUrl(League league) =>
+      'https://www.kleague.com/schedule.do';
   static String source(League league) => '${league.label} 공식 일정·기록';
 
   Future<List<UnifiedMatchModel>> month(League league, DateTime month) async {
     final key = '${league.name}:${month.year}:${month.month}';
     try {
       return await _months.putIfAbsent(key, () async {
-        if (league == League.kbl) {
-          String compact(DateTime d) =>
-              '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
-          final response = await dio.get<dynamic>(
-            'https://api.kbl.or.kr/match/list',
-            queryParameters: {
-              'fromDate': compact(DateTime(month.year, month.month)),
-              'toDate': compact(DateTime(month.year, month.month + 1, 0)),
-              'tcodeList': 'all',
-              'seasonGrade': 1,
-            },
-            options: Options(
-              headers: const {
-                'channel': 'WEB',
-                'teamcode': 'XX',
-                'lang': 'ko',
-                'x-requested-with': 'XMLHttpRequest',
-              },
-            ),
-          );
-          return parseKbl(response.data);
-        }
         final response = await dio.post<dynamic>(
           'https://www.kleague.com/getScheduleList.do',
           data: {
@@ -89,33 +65,6 @@ class KoreanLeagueService {
     return DateTime.parse(
       '${digits.substring(0, 4)}-${digits.substring(4, 6)}-${digits.substring(6, 8)}T${t.substring(0, 2)}:${t.substring(2)}:00+09:00',
     );
-  }
-
-  static List<UnifiedMatchModel> parseKbl(dynamic raw) {
-    if (raw is! List) {
-      throw const FormatException('KBL schedule schema changed');
-    }
-    return [
-      for (final g in raw)
-        if (g is Map && '${g['seasonGrade'] ?? 1}' == '1')
-          _match(
-            League.kbl,
-            '${g['gmkey'] ?? ''}',
-            _kst('${g['gameDate']}', '${g['gameStart']}'),
-            '${g['tnameFH'] ?? g['tnameH'] ?? ''}',
-            '${g['tnameFA'] ?? g['tnameA'] ?? ''}',
-            '${g['isEnded']}' == '1'
-                ? MatchState.finalScore
-                : '${g['isStarted']}' == '1'
-                ? MatchState.live
-                : MatchState.scheduled,
-            g['scoreH'],
-            g['scoreA'],
-            '${g['stadiumnameF'] ?? g['stadiumname'] ?? ''}',
-            '${g['tv'] ?? ''}',
-            officialUrl(League.kbl),
-          ),
-    ];
   }
 
   static List<UnifiedMatchModel> parseKleague(dynamic raw, League league) {

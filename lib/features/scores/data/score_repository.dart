@@ -493,12 +493,7 @@ class ScoreRepository {
 
   Future<MatchDetail> details(UnifiedMatchModel match) async {
     final detail = await _details(match);
-    if (![
-      League.lol,
-      League.kbo,
-      League.kbl,
-      League.kleague1,
-    ].contains(match.league)) {
+    if (![League.lol, League.kbo, League.kleague1].contains(match.league)) {
       return detail;
     }
     final korean = match.startsAt.toUtc().add(const Duration(hours: 9));
