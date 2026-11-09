@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../features/scores/data/score_repository.dart';
 import '../models/unified_match_model.dart';
-import '../models/match_detail.dart';
 import 'api_key_storage_service.dart';
 import 'ai_summary_service.dart';
 
@@ -78,12 +77,30 @@ final leagueScoresProvider = FutureProvider.autoDispose
           day.year == now.year &&
           day.month == now.month &&
           day.day == now.day) {
-        final timer = Timer(const Duration(seconds: 30), ref.invalidateSelf);
+        final timer = Timer.periodic(const Duration(seconds: 30), (_) {
+          final view = (day: day, league: ref.read(selectedLeagueProvider));
+          if (ref.read(readingScoreboardProvider) != view) ref.invalidateSelf();
+        });
         ref.onDispose(timer.cancel);
       }
       return ref.watch(repositoryProvider).load(league, day);
     });
 
-final lckStandingsProvider = FutureProvider.autoDispose<List<RecordSection>>(
-  (ref) => ref.watch(repositoryProvider).lckStandings(),
-);
+// Keep all leagues in the active view observed, and publish one complete list.
+// Scrolling must never dispose/reload individual sections or collapse their height.
+typedef ScoreboardView = ({DateTime day, League? league});
+final scoreboardProvider = FutureProvider.autoDispose
+    .family<List<LeagueResult>, ScoreboardView>((ref, view) {
+      final leagues = view.league == null ? League.values : [view.league!];
+      return Future.wait([
+        for (final league in leagues)
+          ref.watch(leagueScoresProvider(league).future),
+      ]);
+    });
+
+// Pause automatic list replacement while the user is reading below the top.
+final readingScoreboardProvider = StateProvider<ScoreboardView?>((ref) {
+  ref.watch(selectedDateProvider);
+  ref.watch(selectedLeagueProvider);
+  return null;
+});

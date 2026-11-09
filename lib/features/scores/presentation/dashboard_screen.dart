@@ -7,8 +7,8 @@ import '../../settings/api_key_sheet.dart';
 import 'match_card.dart';
 import 'match_detail_sheet.dart';
 import 'source_link.dart';
-import 'record_sections.dart';
 import '../data/korean_league_service.dart';
+import '../data/score_repository.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -23,6 +23,8 @@ class DashboardScreen extends ConsumerWidget {
             (favorites.contains(b) ? 1 : 0) - (favorites.contains(a) ? 1 : 0);
         return favored != 0 ? favored : a.index.compareTo(b.index);
       });
+    final view = (day: day, league: selected);
+    final scores = ref.watch(scoreboardProvider(view));
     final keyStatus = ref.watch(keyPresentProvider);
     return Scaffold(
       appBar: AppBar(
@@ -163,7 +165,6 @@ class DashboardScreen extends ConsumerWidget {
               child: RefreshIndicator(
                 onRefresh: () async {
                   ref.read(repositoryProvider).clearCache();
-                  ref.invalidate(lckStandingsProvider);
                   final targets = selected == null ? leagues : [selected];
                   for (final league in targets) {
                     ref.invalidate(leagueScoresProvider(league));
@@ -174,25 +175,66 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   );
                 },
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    for (final league
-                        in (selected == null ? leagues : [selected]))
-                      _LeagueSection(league: league),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text(
-                        '공개 제공처 데이터 · 지연 또는 누락될 수 있습니다.\nAI 요약은 Google에 경기 자료를 전송하며 오류가 있을 수 있습니다.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: TacticalColors.secondary,
-                          fontSize: 11,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification.metrics.axis == Axis.vertical &&
+                        notification is ScrollUpdateNotification) {
+                      ref.read(readingScoreboardProvider.notifier).state =
+                          notification.metrics.pixels > 0 ? view : null;
+                    }
+                    return false;
+                  },
+                  child: scores.when(
+                    skipLoadingOnReload: true,
+                    skipLoadingOnRefresh: true,
+                    loading: () => ListView(
+                      children: const [
+                        Padding(
+                          padding: EdgeInsets.all(20),
+                          child: LinearProgressIndicator(),
                         ),
+                      ],
+                    ),
+                    error: (_, stack) => ListView(
+                      children: [
+                        TextButton(
+                          onPressed: () =>
+                              ref.invalidate(scoreboardProvider(view)),
+                          child: const Text('경기 조회 실패 · 다시 시도'),
+                        ),
+                      ],
+                    ),
+                    data: (results) => SingleChildScrollView(
+                      key: ValueKey(view),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final league
+                              in (selected == null ? leagues : [selected]))
+                            _LeagueSection(
+                              key: ValueKey(league),
+                              league: league,
+                              data: results.firstWhere(
+                                (r) => r.league == league,
+                              ),
+                            ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Text(
+                              '공개 제공처 데이터 · 지연 또는 누락될 수 있습니다.\nAI 요약은 Google에 경기 자료를 전송하며 오류가 있을 수 있습니다.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: TacticalColors.secondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -203,12 +245,12 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class _LeagueSection extends ConsumerWidget {
-  const _LeagueSection({required this.league});
+class _LeagueSection extends StatelessWidget {
+  const _LeagueSection({super.key, required this.league, required this.data});
   final League league;
+  final LeagueResult data;
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final result = ref.watch(leagueScoresProvider(league));
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -222,137 +264,96 @@ class _LeagueSection extends ConsumerWidget {
             ),
           ),
         ),
-        result.when(
-          loading: () => const Padding(
-            padding: EdgeInsets.all(20),
-            child: LinearProgressIndicator(),
-          ),
-          error: (_, stack) => const Text('데이터를 불러오지 못했습니다.'),
-          data: (data) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (data.seasonNotice != null)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      data.seasonNotice!,
-                      style: const TextStyle(height: 1.6),
-                    ),
-                  ),
-                ),
-              if (data.isUpcoming)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (data.seasonNotice != null)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Text(
-                    '선택한 날짜에 경기가 없어 다음 예정 경기를 표시합니다.',
-                    style: TextStyle(color: TacticalColors.secondary),
+                    data.seasonNotice!,
+                    style: const TextStyle(height: 1.6),
                   ),
                 ),
-              if (league == League.lol)
-                const MatchSourceLink(
-                  label: 'LoL 공식 일정 · 공개된 일정 범위',
-                  url: 'https://lolesports.com/ko-KR/schedule',
+              ),
+            if (data.isUpcoming)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text(
+                  '선택한 날짜에 경기가 없어 다음 예정 경기를 표시합니다.',
+                  style: TextStyle(color: TacticalColors.secondary),
                 ),
-              if (league == League.kbo)
-                const MatchSourceLink(
-                  label: 'KBO 공식 게임센터',
-                  url:
-                      'https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx',
-                ),
-              if (KoreanLeagueService.supports(league))
-                MatchSourceLink(
-                  label: KoreanLeagueService.source(league),
-                  url: KoreanLeagueService.officialUrl(league),
-                ),
-              if (league == League.lol) const _LckStandings(),
-              if (data.sections.isNotEmpty)
-                RecordSections(sections: data.sections),
-              if (data.warning != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        data.warning!,
-                        style: const TextStyle(color: TacticalColors.secondary),
-                      ),
-                      Wrap(
-                        spacing: 12,
-                        children: [
-                          TextButton(
+              ),
+            if (league == League.lol)
+              const MatchSourceLink(
+                label: 'LoL 공식 일정 · 공개된 일정 범위',
+                url: 'https://lolesports.com/ko-KR/schedule',
+              ),
+            if (league == League.kbo)
+              const MatchSourceLink(
+                label: 'KBO 공식 게임센터',
+                url:
+                    'https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx',
+              ),
+            if (KoreanLeagueService.supports(league))
+              MatchSourceLink(
+                label: KoreanLeagueService.source(league),
+                url: KoreanLeagueService.officialUrl(league),
+              ),
+            if (data.warning != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data.warning!,
+                      style: const TextStyle(color: TacticalColors.secondary),
+                    ),
+                    Wrap(
+                      spacing: 12,
+                      children: [
+                        Consumer(
+                          builder: (context, ref, child) => TextButton(
                             onPressed: () =>
                                 ref.invalidate(leagueScoresProvider(league)),
                             child: const Text('다시 시도'),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              if (data.warning == null &&
-                  data.seasonNotice == null &&
-                  data.matches.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    '이 날짜에 제공된 경기가 없습니다.',
-                    style: TextStyle(color: TacticalColors.secondary),
-                  ),
-                ),
-              for (final match in data.matches)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (data.isUpcoming)
-                      Text(
-                        '${match.startsAt.toLocal().year}.${match.startsAt.toLocal().month.toString().padLeft(2, '0')}.${match.startsAt.toLocal().day.toString().padLeft(2, '0')} ${match.startsAt.toLocal().hour.toString().padLeft(2, '0')}:${match.startsAt.toLocal().minute.toString().padLeft(2, '0')}',
-                        style: const TextStyle(color: TacticalColors.secondary),
-                      ),
-                    MatchCard(
-                      match: match,
-                      onTap: () => showMatchDetail(context, match),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-            ],
-          ),
+              ),
+            if (data.warning == null &&
+                data.seasonNotice == null &&
+                data.matches.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  '이 날짜에 제공된 경기가 없습니다.',
+                  style: TextStyle(color: TacticalColors.secondary),
+                ),
+              ),
+            for (final match in data.matches)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (data.isUpcoming)
+                    Text(
+                      '${match.startsAt.toLocal().year}.${match.startsAt.toLocal().month.toString().padLeft(2, '0')}.${match.startsAt.toLocal().day.toString().padLeft(2, '0')} ${match.startsAt.toLocal().hour.toString().padLeft(2, '0')}:${match.startsAt.toLocal().minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(color: TacticalColors.secondary),
+                    ),
+                  MatchCard(
+                    match: match,
+                    onTap: () => showMatchDetail(context, match),
+                  ),
+                ],
+              ),
+          ],
         ),
       ],
     );
   }
-}
-
-class _LckStandings extends ConsumerStatefulWidget {
-  const _LckStandings();
-  @override
-  ConsumerState<_LckStandings> createState() => _LckStandingsState();
-}
-
-class _LckStandingsState extends ConsumerState<_LckStandings> {
-  bool expanded = false;
-  @override
-  Widget build(BuildContext context) => ExpansionTile(
-    title: const Text('LCK 공식 순위 · 최근 시작 대회'),
-    onExpansionChanged: (value) => setState(() => expanded = value),
-    children: [
-      if (expanded)
-        ref
-            .watch(lckStandingsProvider)
-            .when(
-              loading: () => const LinearProgressIndicator(),
-              error: (_, stack) => TextButton(
-                onPressed: () => ref.invalidate(lckStandingsProvider),
-                child: const Text('순위 조회 실패 · 다시 시도'),
-              ),
-              data: (sections) => sections.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('현재 시즌에 공개된 LCK 순위가 없습니다.'),
-                    )
-                  : RecordSections(sections: sections),
-            ),
-    ],
-  );
 }

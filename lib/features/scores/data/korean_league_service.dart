@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import '../../../models/match_detail.dart';
 import '../../../models/unified_match_model.dart';
 
 /// Official public web endpoints; schemas cross-checked against k-skill docs.
@@ -10,7 +9,7 @@ class KoreanLeagueService {
   final _months = <String, Future<List<UnifiedMatchModel>>>{};
   void clearCache() => _months.clear();
   static bool supports(League league) =>
-      [League.kbl, League.kleague1, League.kleague2].contains(league);
+      [League.kbl, League.kleague1].contains(league);
   static String officialUrl(League league) => league == League.kbl
       ? 'https://www.kbl.or.kr/game/schedule-list'
       : 'https://www.kleague.com/schedule.do';
@@ -47,7 +46,7 @@ class KoreanLeagueService {
           data: {
             'year': '${month.year}',
             'month': month.month.toString().padLeft(2, '0'),
-            'leagueId': league == League.kleague1 ? 1 : 2,
+            'leagueId': 1,
           },
           options: Options(contentType: 'application/json;charset=utf-8'),
         );
@@ -78,79 +77,6 @@ class KoreanLeagueService {
         for (final m in list)
           if (sameDay(m.startsAt, day)) m.id: m,
     }.values.toList()..sort((a, b) => a.startsAt.compareTo(b.startsAt));
-  }
-
-  Future<List<RecordSection>> standings(League league, DateTime now) async {
-    dynamic raw;
-    if (league == League.kbl) {
-      raw = (await dio.get<dynamic>(
-        'https://api.kbl.or.kr/league/rank/team',
-        options: Options(
-          headers: const {
-            'channel': 'WEB',
-            'teamcode': 'XX',
-            'lang': 'ko',
-            'x-requested-with': 'XMLHttpRequest',
-          },
-        ),
-      )).data;
-    } else {
-      raw = (await dio.post<dynamic>(
-        'https://www.kleague.com/record/teamRank.do',
-        queryParameters: {
-          'leagueId': league == League.kleague1 ? 1 : 2,
-          'year': now.toUtc().add(const Duration(hours: 9)).year,
-          'stadium': 'all',
-          'recordType': 'rank',
-        },
-      )).data;
-    }
-    return parseStandings(raw, league, now);
-  }
-
-  static List<RecordSection> parseStandings(
-    dynamic raw,
-    League league,
-    DateTime now,
-  ) {
-    final basketball = league == League.kbl;
-    final data = raw is Map ? raw['data'] ?? raw : raw;
-    final rows = basketball
-        ? data
-        : data is Map
-        ? data['teamRank']
-        : null;
-    if (rows is! List) throw const FormatException('Standings schema changed');
-    if (rows.isEmpty) return [];
-    final sorted =
-        [
-          for (final r in rows)
-            if (r is Map) r,
-        ]..sort(
-          (a, b) => (int.tryParse('${a['rank']}') ?? 999).compareTo(
-            int.tryParse('${b['rank']}') ?? 999,
-          ),
-        );
-    final local = now.toLocal();
-    return [
-      RecordSection(
-        '${league.label} 현재 순위 · ${local.year}.${local.month}.${local.day} 조회 (선택일 당시 순위 아님)',
-        basketball
-            ? const ['순위', '팀', '승', '패']
-            : const ['순위', '팀', '승점', '승/무/패'],
-        [
-          for (final r in sorted)
-            [
-              '${r['rank'] ?? '—'}',
-              '${basketball ? r['tnameF'] ?? r['tname'] ?? '미제공' : r['teamName'] ?? r['teamId'] ?? '미제공'}',
-              '${basketball ? r['win'] ?? '—' : r['gainPoint'] ?? '—'}',
-              basketball
-                  ? '${r['loss'] ?? '—'}'
-                  : '${r['winCnt'] ?? '—'}/${r['tieCnt'] ?? '—'}/${r['lossCnt'] ?? '—'}',
-            ],
-        ],
-      ),
-    ];
   }
 
   static DateTime _kst(String date, String time) {
@@ -204,8 +130,7 @@ class KoreanLeagueService {
     };
     return [
       for (final g in data['scheduleList'] as List)
-        if (g['leagueId'] == null ||
-            '${g['leagueId']}' == (league == League.kleague1 ? '1' : '2'))
+        if (g['leagueId'] == null || '${g['leagueId']}' == '1')
           _match(
             league,
             '${g['year'] ?? ''}:${g['meetSeq'] ?? ''}:${g['gameId'] ?? ''}',
@@ -225,7 +150,7 @@ class KoreanLeagueService {
             g['gameId'] != null && g['meetSeq'] != null
                 ? Uri.https('www.kleague.com', '/match.do', {
                     'year': '${g['year']}',
-                    'leagueId': league == League.kleague1 ? '1' : '2',
+                    'leagueId': '1',
                     'gameId': '${g['gameId']}',
                     'meetSeq': '${g['meetSeq']}',
                   }).toString()

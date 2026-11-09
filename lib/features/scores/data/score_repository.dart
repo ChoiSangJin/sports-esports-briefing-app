@@ -9,7 +9,6 @@ import 'kbo_detail_service.dart';
 import 'lol_detail_service.dart';
 import 'season_service.dart';
 import 'korean_league_service.dart';
-import 'lck_standings_service.dart';
 
 class LeagueResult {
   const LeagueResult(
@@ -19,7 +18,6 @@ class LeagueResult {
     this.source = '',
     this.isUpcoming = false,
     this.seasonNotice,
-    this.sections = const [],
   ]);
   final League league;
   final List<UnifiedMatchModel> matches;
@@ -27,7 +25,6 @@ class LeagueResult {
   final String source;
   final bool isUpcoming;
   final String? seasonNotice;
-  final List<RecordSection> sections;
 }
 
 class ScoreRepository {
@@ -37,21 +34,18 @@ class ScoreRepository {
     SharedPreferences? preferences,
   }) : _now = clock ?? DateTime.now,
        _lol = LolScheduleService(dio),
-       _lck = LckStandingsService(dio),
        _korean = KoreanLeagueService(dio),
        _seasons = SeasonService(dio, preferences: preferences);
   final DateTime Function() _now;
   final SeasonService _seasons;
   final Dio dio;
   final LolScheduleService _lol;
-  final LckStandingsService _lck;
   final KoreanLeagueService _korean;
   final _espn = <String, Future<List<UnifiedMatchModel>>>{};
   DateTime _cachedAt = DateTime.now();
   void clearCache({bool includeSeasons = true}) {
     if (includeSeasons) {
       _seasons.clearCache();
-      _lck.clearCache();
     }
     _lol.clearCache();
     _korean.clearCache();
@@ -65,8 +59,6 @@ class ScoreRepository {
     League.mlb: 'baseball/mlb',
     League.epl: 'soccer/eng.1',
   };
-
-  Future<List<RecordSection>> lckStandings() => _lck.load(_now());
 
   Future<LeagueResult> load(League league, DateTime day) async {
     if (DateTime.now().difference(_cachedAt).inSeconds >= 60) {
@@ -398,15 +390,6 @@ class ScoreRepository {
     } catch (_) {
       warning = '${league.label} 공식 일정 조회에 실패했습니다. 다시 시도하거나 공식 사이트에서 확인해 주세요.';
     }
-    var sections = <RecordSection>[];
-    try {
-      sections = await _korean.standings(league, now);
-    } catch (_) {
-      warning = [
-        if (warning != null) warning,
-        '현재 순위를 불러오지 못했습니다. 경기 일정과 별도로 다시 시도할 수 있습니다.',
-      ].join('\n');
-    }
     return LeagueResult(
       league,
       matches,
@@ -414,7 +397,6 @@ class ScoreRepository {
       KoreanLeagueService.source(league),
       upcoming,
       notice,
-      sections,
     );
   }
 
@@ -516,7 +498,6 @@ class ScoreRepository {
       League.kbo,
       League.kbl,
       League.kleague1,
-      League.kleague2,
     ].contains(match.league)) {
       return detail;
     }
